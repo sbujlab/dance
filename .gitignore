@@ -1,0 +1,8 @@
+*.d
+*.o
+*.so
+*Dict*
+*pdf*
+*png*
+*~
+*txt*
