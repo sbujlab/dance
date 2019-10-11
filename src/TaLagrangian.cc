@@ -128,13 +128,11 @@ Bool_t TaLagrangian::ComputeCorrelation(){
   Int_t ntotal = mul_tree->GetEntries();
   cout << " -- nGoodPatterns in Mul Tree : " << nGoodPatterns << endl;
   
-  vector<AccVector> DetMonAccumulator; //[idet][imon]
-  vector<AccVector> MonAccumulator; // [imon][jmon]
-  AccVector DetAccumulator; // [idet]
-  vector<Double_t> asym_det;
-  vector<Double_t> diff_mon;
-  asym_det.resize(nDet);
-  diff_mon.resize(nMon);
+  vector<AccVector> DetMonAccumulator(nDet); //[idet][imon]
+  vector<AccVector> MonAccumulator(nMon); // [imon][jmon]
+  AccVector DetAccumulator(nDet); // [idet]
+  vector<Double_t> asym_det(nDet);
+  vector<Double_t> diff_mon(nMon);
   for(int idet=0;idet<nDet;idet++){
     TLeaf* this_leaf=mul_tree->GetBranch("asym_"+det_array[idet])->GetLeaf("hw_sum");
     this_leaf->SetAddress(&asym_det[idet]);
@@ -145,13 +143,10 @@ Bool_t TaLagrangian::ComputeCorrelation(){
   }
   Double_t kErrorFlag;
   mul_tree->SetBranchAddress("ErrorFlag",&kErrorFlag);
-  DetAccumulator.resize(nDet);
-  MonAccumulator.resize(nMon);
-  DetMonAccumulator.resize(nDet);
-  Vec2D CovDetMon; //[idet][imon]
-  Vec2D CovMonMon; //[imon][jmon] symmetric
-  CovDetMon.resize(nDet);
-  CovMonMon.resize(nMon);
+
+  Vec2D CovDetMon(nDet); //[idet][imon]
+  Vec2D CovMonMon(nMon); //[imon][jmon] symmetric
+
   for(int idet=0;idet<nDet;idet++){
     DetMonAccumulator[idet].resize(nMon);
     CovDetMon[idet].resize(nMon);
@@ -334,8 +329,7 @@ void TaLagrangian::ComputeSlopes(){
     slopeM=solutionM.GetSub(0,nMon-1,0,nDet-1);
     slopeM.Print();
 #endif
-    Vec2D DetMonSlopes;
-    DetMonSlopes.resize(nDet);
+    Vec2D DetMonSlopes(nDet);
     for(int idet=0;idet<nDet;idet++){
       DetMonSlopes[idet].resize(nMon);
       for(int imon=0; imon<nMon; imon++)
@@ -356,16 +350,11 @@ void TaLagrangian::CorrectTree(){
 #ifdef NOISY
   cout << __FUNCTION__ << endl;
 #endif
-  vector<Double_t> raw_det;
-  vector<Double_t> cor_det;
-  vector<Double_t> raw_combo;
-  vector<Double_t> cor_combo;
-  vector<Double_t> diff_mon;
-  raw_det.resize(nDet);
-  cor_det.resize(nDet);
-  cor_combo.resize(nCombo);
-  raw_combo.resize(nCombo);
-  diff_mon.resize(nMon);
+  vector<Double_t> raw_det(nDet);
+  vector<Double_t> cor_det(nDet);
+  vector<Double_t> raw_combo(nCombo);
+  vector<Double_t> cor_combo(nCombo);
+  vector<Double_t> diff_mon(nMon);
 
   statMon.resize(nMon);
   statRawDet.resize(nDet);
@@ -373,16 +362,11 @@ void TaLagrangian::CorrectTree(){
   statRawCombo.resize(nCombo);
   statCorCombo.resize(nCombo);
 
-  AccVector accMon;
-  AccVector accRawDet;
-  AccVector accCorDet;
-  AccVector accRawCombo;
-  AccVector accCorCombo;
-  accMon.resize(nMon); 
-  accRawDet.resize(nDet);
-  accCorDet.resize(nDet);
-  accRawCombo.resize(nCombo);
-  accCorCombo.resize(nCombo);
+  AccVector accMon(nMon);
+  AccVector accRawDet(nDet);
+  AccVector accCorDet(nDet);
+  AccVector accRawCombo(nCombo);
+  AccVector accCorCombo(nCombo);
 
   accMon_avg.resize(nMon); 
   accRawDet_avg.resize(nDet);
@@ -417,11 +401,12 @@ void TaLagrangian::CorrectTree(){
   mini_tree->Branch("run",&run_number);
   mini_tree->Branch("seg",&seg_number);
 
-  Vec2D ComboSlopes,DetMonSlopes;
-  ComboSlopes.resize(nCombo);
+  Vec2D ComboSlopes(nCombo);
+  Vec2D DetMonSlopes(nDet);;
+
   for(int icom=0;icom<nCombo;icom++)
     ComboSlopes[icom].resize(nMon);
-  DetMonSlopes.resize(nDet);
+
   for(int idet=0;idet<nDet;idet++)
     DetMonSlopes[idet].resize(nMon);
 
@@ -567,16 +552,11 @@ void TaLagrangian::WriteSummary(){
     double ppm = 1e-6;
     double um = 1e-3;
 
-    vector<RUN_STATS> statMon_avg;
-    vector<RUN_STATS> statRawDet_avg;
-    vector<RUN_STATS> statCorDet_avg;
-    vector<RUN_STATS> statRawCombo_avg;
-    vector<RUN_STATS> statCorCombo_avg;
-    statMon_avg.resize(nMon);
-    statRawDet_avg.resize(nDet);
-    statCorDet_avg.resize(nDet);
-    statRawCombo_avg.resize(nCombo);
-    statCorCombo_avg.resize(nCombo);
+    vector<RUN_STATS> statMon_avg(nMon);
+    vector<RUN_STATS> statRawDet_avg(nDet);
+    vector<RUN_STATS> statCorDet_avg(nDet);
+    vector<RUN_STATS> statRawCombo_avg(nCombo);
+    vector<RUN_STATS> statCorCombo_avg(nCombo);
 
     for(int imon=0;imon<nMon;imon++){
       UpdateRunStat(statMon_avg[imon],accMon_avg[imon]);
