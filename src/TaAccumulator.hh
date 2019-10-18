@@ -2,12 +2,15 @@
 #define __TaAccumulator_hh__
 #include "Rtypes.h"
 
+typedef struct{Double_t mean,err,rms,m2,num_samples;} STAT;
+
 class TaAccumulator{
 public:
   TaAccumulator();
   virtual ~TaAccumulator();
   void Update(Double_t s, Double_t t);
   void Update(Double_t ss);
+  void UpdateStat(STAT &input);
   void Merge( TaAccumulator);
   void Zero();
   inline Double_t GetM2() const {return M2;};

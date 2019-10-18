@@ -1,5 +1,5 @@
 #include "TaAccumulator.hh"
-
+#include "TMath.h"
 ClassImp(TaAccumulator);
 
 TaAccumulator::TaAccumulator(){
@@ -40,3 +40,12 @@ void TaAccumulator::Zero(){
   mu2=0;
   n=0;
 }
+
+void TaAccumulator::UpdateStat(STAT &input){
+  input.mean = mu1;
+  input.err = TMath::Sqrt(M2)/n;
+  input.rms = TMath::Sqrt(M2/n);
+  input.m2 = M2;
+  input.num_samples = n;
+}
+

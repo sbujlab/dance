@@ -16,11 +16,7 @@ INCLUDES = -I$(ROOTINC)
 LIBS	:= $(ROOTLIBS)
 LDFLAGS := $(shell $(ROOTCONFIG) --ldflags)
 LD	:= $(shell $(ROOTCONFIG) --ld)
-OBJS	:= TaConfig.o TaInput.o \
-		TaSuperCycle.o TaAccumulator.o \
-		TaAnalysis.o TaDithering.o TaLagrangian.o
-
-
+OBJS	:= TaConfig.o TaInput.o TaOutput.o TaChannel.o TaAccumulator.o
 HDR	:= $(OBJS:.o=.hh) 
 DEPS 	:= $(OBJS:.o=.d)
 

@@ -6,8 +6,8 @@ Dithering Analysis and Correction Engine
 ************************************/
 #include "TaInput.hh"
 #include "TaConfig.hh"
-#include "TaAnalysis.hh"
-#include "TaDithering.hh"
+// #include "TaAnalysis.hh"
+// #include "TaDithering.hh"
 
 #include "TStopwatch.h"
 #include "TString.h"
@@ -61,36 +61,22 @@ int main(int argc, char** argv){
   
   TaConfig *fConfig= new TaConfig();
   fConfig->SetInputName(japanFileName);
-  TaInput *fInput;
-  if( fConfig->ParseFile(confFileName) ){
-    fInput = new TaInput(fConfig);
-    if(run_number!=0)
-      fInput->SetRunNumber(run_number);
-    if(ext_filename!="")
-      fInput->SetExtFileName(ext_filename);
-    if(fInput->LoadROOTFile()){
-      TString anaType = fConfig->GetAnalysisType();
-      if((anaType=="sens")
-	 || (anaType=="lagrangian")
-	 || (anaType=="regression")){
-	TaAnalysis *fAnalysis = new TaAnalysis(fInput);
-	if(fAnalysis->LoadConfig(fConfig)){
-	  fAnalysis->Process();
-	  fAnalysis->End();
-	}
-      }
-      else{
-	cerr << " ** Error: Unknown analysis type . Aborted " << endl;
-	return 1;
-      }
-    }else{
-      cerr << " ** Error: Failed to Load Input. Aborted " << endl;
-      return 1;
-    }
-  } else{
-      cerr << " ** Error: Failed to Load Configuration. Aborted " << endl;
-    return 1;
-  }
+  fConfig->ParseFile(confFileName);
+  fConfig->SetRunNumber(run_number);
+  TaInput *fInput = new TaInput(fConfig);
+  TaOutput *fOutput = new TaOutput(fConfig); 
+  fInput->LoadROOTFile();
+  fInput->WriteRawChannels(fOutput);
+
+  // VAnalyisModule* fAnalysisModule = new TaRegression(fConfig);
+  // fAnalysisModule->LoadInput(fInput);
+  // fAnalysisModule->Process(fOutput);
+  // fAnalysisModule->End();
+
+  fOutput->Write();
+  fOutput->Close();
+  fInput->Close();  
+
   cout <<" -- " ;
   tsw.Print();
   return 0;
