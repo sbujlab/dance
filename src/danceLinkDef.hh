@@ -12,5 +12,7 @@
 #pragma link C++ class TaLagrangian+;
 #pragma link C++ class TaOutput+;
 #pragma link C++ class TaChannel+;
+#pragma link C++ class VAnalysisModule+;
+#pragma link C++ class TaRegression+;
 
 #endif

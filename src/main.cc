@@ -5,7 +5,10 @@ Dithering Analysis and Correction Engine
 	last update: Oct 2019
 ************************************/
 #include "TaInput.hh"
+#include "TaOutput.hh"
 #include "TaConfig.hh"
+#include "VAnalysisModule.hh"
+#include "TaRegression.hh"
 // #include "TaAnalysis.hh"
 // #include "TaDithering.hh"
 
@@ -67,11 +70,16 @@ int main(int argc, char** argv){
   TaOutput *fOutput = new TaOutput(fConfig); 
   fInput->LoadROOTFile();
   fInput->WriteRawChannels(fOutput);
-
-  // VAnalyisModule* fAnalysisModule = new TaRegression(fConfig);
-  // fAnalysisModule->LoadInput(fInput);
-  // fAnalysisModule->Process(fOutput);
-  // fAnalysisModule->End();
+  
+  vector<VAnalysisModule*> fAnalyses = fConfig->GetAnalysisArray();
+  vector<VAnalysisModule*>::iterator iter_ana = fAnalyses.begin();
+  while(iter_ana!=fAnalyses.end()){
+    cout << "Loading Module " << endl;
+    (*iter_ana)->LoadInput(fInput);
+    (*iter_ana)->Process(fOutput);
+    (*iter_ana)->End();
+    iter_ana++;
+  }
 
   fOutput->Write();
   fOutput->Close();

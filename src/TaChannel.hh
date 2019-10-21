@@ -10,12 +10,12 @@ class TaAccumulator;
 class TaChannel {
 public:
   TaChannel();
-  TaChannel(TString tree, TString channel, Int_t index);
+  TaChannel(TString tree, TString branch);
   virtual ~TaChannel();
 
   void ConnectChannels(vector<TaChannel*>, vector<Double_t> );
-  void ProcessCombination();
-  void ApplyCorrection();
+  void DefineSubtraction(TaChannel*,TaChannel*);
+  void CalcCombination();
   void FillDataArray();
   void FillOutputValue();
 
@@ -37,7 +37,6 @@ public:
 private:
   TString fTreeName;
   TString fChannelName;
-  Int_t fChannelIndex;
   vector<TaChannel*> fChannels;
   vector<Double_t> fPrefactors;
   vector<Double_t> fDataArray;

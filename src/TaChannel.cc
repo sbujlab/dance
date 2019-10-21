@@ -4,11 +4,10 @@ ClassImp(TaChannel);
 TaChannel::TaChannel():fOutputValue(0.0){
 }
 
-TaChannel::TaChannel(TString tree, TString channel, Int_t index)
+TaChannel::TaChannel(TString tree, TString channel)
   :fOutputValue(0.0){
   fTreeName = tree;
   fChannelName = channel;
-  fChannelIndex = index;
 }
 
 TaChannel::~TaChannel(){}
@@ -19,8 +18,18 @@ void TaChannel::ConnectChannels(vector<TaChannel*> in_channels,
   fPrefactors = in_prefactors;
 }
 
-void TaChannel::ProcessCombination(){
+void TaChannel::DefineSubtraction(TaChannel* raw, TaChannel* correction){
+  fChannels.clear();
+  fPrefactors.clear();
+  fChannels.push_back(raw);
+  fPrefactors.push_back(1);
+  fChannels.push_back(correction);
+  fPrefactors.push_back(-1);
+}
+
+void TaChannel::CalcCombination(){
   Int_t nch = fChannels.size();
+  fOutputValue=0.0;
   for(int i=0;i<nch;i++){
     fOutputValue+=fPrefactors[i]*(fChannels[i]->fOutputValue);
   }
@@ -30,11 +39,8 @@ void TaChannel::FillDataArray(){
   fDataArray.push_back(fOutputValue);
 }
 
-void TaChannel::ApplyCorrection(){
-  ProcessCombination();
-}
-
 Double_t TaChannel::GetEntry(Int_t ie){
+  fOutputValue = fDataArray[ie];
   return fDataArray[ie];
 }
 

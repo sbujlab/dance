@@ -1,4 +1,7 @@
 #include "TaConfig.hh"
+#include "TaRegression.hh"
+#include "VAnalysisModule.hh"
+
 ClassImp(TaConfig);
 using namespace std;
 TaConfig::TaConfig(){
@@ -29,9 +32,6 @@ Bool_t TaConfig::ParseFile(TString fileName){
   Int_t index_ana = 0;
   Int_t channel_count=0;
   while(sline.ReadLine(configFile) ){
-#ifdef NOISY
-    cout << sline << endl;
-#endif
     if(sline.Contains(comment))
       continue;
 
@@ -64,7 +64,6 @@ Bool_t TaConfig::ParseFile(TString fileName){
 	  device_list.push_back(vecStr[1]);
 	}
       }else{
-	cout << sline << endl;
 	pair<Int_t,TString> thiskey=make_pair(myIndex,vecStr[0]);
 	fAnalysisParameters[thiskey]=vecStr[1];
       }
@@ -75,9 +74,6 @@ Bool_t TaConfig::ParseFile(TString fileName){
 }
 
 vector<TString> TaConfig::ParseLine(TString sline, TString delim){
-#ifdef DEBUG
-  cout << __PRETTY_FUNCTION__ << endl;
-#endif
   vector<TString> ret;
   if(sline.Contains(delim)){
     Int_t index = sline.First(delim);
@@ -97,14 +93,14 @@ pair<TString,TString> TaConfig::GetAnalysisTypeName(TString sline){
 
   Ssiz_t start_pt=sline.First('[')+1;
   Ssiz_t length = sline.First(':');
-  length = length-start_pt+1;
+  length = length-start_pt;
   TString type = sline(start_pt,length);
 
   start_pt = sline.First(':')+1;
   length = sline.Last(']')-1;
   length = length - start_pt+1;
   TString name = sline(start_pt,length);
-  
+  cout << type << "\t " << name << endl;
   return make_pair(type,name);
 }
 
@@ -132,4 +128,20 @@ TString TaConfig::GetAnalysisParameter(Int_t index, TString key){
 
 Int_t TaConfig::GetAnalysisIndex(TString type, TString name){
   return fAnalysisMap[make_pair(type,name)];
+}
+
+vector<VAnalysisModule*> TaConfig::GetAnalysisArray(){
+  Int_t nMod = fAnalysisTypeNames.size();
+  vector<VAnalysisModule*> fAnalysisArray;
+  for(int i=0; i<nMod;i++){
+    TString type = fAnalysisTypeNames[i].first;
+    TString name = fAnalysisTypeNames[i].second;
+    VAnalysisModule* anAnalysis;
+    if(type=="regression"){
+      cout << "type == regression " << endl;
+      anAnalysis = new TaRegression(type,name,this);
+      fAnalysisArray.push_back(anAnalysis);
+    }
+  }
+  return fAnalysisArray;
 }

@@ -20,8 +20,6 @@ TaInput::TaInput(TaConfig *aConfig){
   input_path=aConfig->GetConfigParameter("input_path");
   input_prefix=aConfig->GetConfigParameter("input_prefix");
   minirun_size = (aConfig->GetConfigParameter("minirun_size")).Atof();
-  cout << minirun_size << endl;
-
 }
 TaInput::~TaInput(){}
 
@@ -74,16 +72,18 @@ void TaInput::InitChannels(TaConfig *aConfig){
   vector<TString> device_list = aConfig->GetDeviceList();
   int nDevice = device_list.size();
   for(int i=0;i<nDevice;i++){
-    TaChannel* aChannel = new TaChannel("mul",device_list[i],i);
+    TaChannel* aChannel = new TaChannel("mul",device_list[i]);
     fChannelArray.push_back(aChannel);
     fChannelNames.push_back(device_list[i]);
     fChannelMap[device_list[i]]=i;
   }
 
-  TaChannel* aChannel = new TaChannel("mul","ErrorFlag",nDevice);
-  fChannelArray.push_back(aChannel);
+  fChannelErrorFlag = new TaChannel("mul","ErrorFlag");
+  fChannelArray.push_back(fChannelErrorFlag);
   fChannelNames.push_back("ErrorFlag");
   fChannelMap["ErrorFlag"]=nDevice;
+
+  fChannelCutFlag = new TaChannel("mul","ok_cut");
 }
 
 void TaInput::WriteRawChannels(TaOutput *aOutput){
@@ -118,6 +118,7 @@ void TaInput::WriteRawChannels(TaOutput *aOutput){
     fChannelArray[ich]->ConstructMiniTreeBranch(aOutput,"mini");
     fChannelArray[ich]->ConstructSumTreeBranch(aOutput,"sum");
   }
+  fChannelCutFlag->ConstructTreeBranch(aOutput);
   
   Double_t mini_id=0;
   aOutput->ConstructTreeBranch("sum","run",run_number);
@@ -132,10 +133,14 @@ void TaInput::WriteRawChannels(TaOutput *aOutput){
     if(elist_mul->GetIndex(ievt)!=-1){
       isGoodPattern=kTRUE;
       goodCounts++;
+      fChannelCutFlag->fOutputValue = 1;
+      fChannelCutFlag->FillDataArray();
     }
-    else
+    else{
       isGoodPattern=kFALSE;
-
+      fChannelCutFlag->fOutputValue = 0;
+      fChannelCutFlag->FillDataArray();
+    }
     for(int ich=0;ich<nch;ich++){
       fChannelArray[ich]->FillOutputValue();
       fChannelArray[ich]->FillDataArray();
@@ -159,7 +164,9 @@ void TaInput::WriteRawChannels(TaOutput *aOutput){
       Bool_t is_last_minrun = kFALSE;
       if(nGoodPatterns-minirun_size*nMinirun<minirun_size){
 	is_last_minrun = kTRUE;
+	mini_start = minirun_range[nMinirun-1].first;
 	minirun_range.pop_back();
+	
 	cout << " -- Meeting last mini-run, " << endl;
 	cout << " -- the rest will be merged into this mini-run  "  << endl;
       }
@@ -174,8 +181,7 @@ void TaInput::WriteRawChannels(TaOutput *aOutput){
     }
   }
   cout << " -- last mini-run ends at event: " << ievt-1 << endl;
-  if(nGoodPatterns<minirun_size)
-    minirun_range.push_back(make_pair(mini_start,ievt-1));
+  minirun_range.push_back(make_pair(mini_start,ievt-1));
 
   for(int ich=0;ich<nch;ich++){
     fChannelArray[ich]->UpdateMiniStat();
@@ -191,3 +197,8 @@ void TaInput::Close(){
   input_file->Close();
 }
 
+
+TaChannel* TaInput::GetChannel(TString name){
+  Int_t index = fChannelMap[name];
+  return fChannelArray[index];
+}

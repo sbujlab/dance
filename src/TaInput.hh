@@ -21,22 +21,21 @@ public:
   TaInput(TaConfig *aConfig);
   virtual ~TaInput();
 
+  inline void SetRunNumber(Int_t i){run_number=i;};
+
   inline TTree* GetEvtTree() const { return evt_tree;};
   inline TTree* GetMulTree() const { return mul_tree;};
   inline Int_t GetRunNumber() const { return run_number;};
   inline Int_t GetSegNumber() const { return seg_number;};
-  inline void SetRunNumber(Int_t i){run_number=i;};
-  inline void SetExtFileName(TString str){
-    ext_filename=str;
-    isExternalConstraint=kTRUE;
-  };
-  inline TString GetExtFileName(){return ext_filename;};
-  inline Bool_t UseExternalConstraint() const {return isExternalConstraint;};
+
+  inline TaChannel* GetChannelCutFlag(){return fChannelCutFlag;};
+  inline vector< pair<Int_t,Int_t> > GetMiniRange(){return minirun_range;};
 
   void InitChannels(TaConfig*);
   void WriteRawChannels(TaOutput*);
   Bool_t LoadROOTFile();
   TaChannel* GetChannel(TString name);
+
   void Close();
 
 private:
@@ -59,7 +58,9 @@ private:
   vector<TaChannel*> fChannelArray;
   map<TString, Int_t> fChannelMap;
   vector<TString> fChannelNames;
-
+  
+  TaChannel* fChannelErrorFlag;
+  TaChannel* fChannelCutFlag;
   ClassDef(TaInput,0);
 };
 

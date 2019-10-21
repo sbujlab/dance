@@ -14,6 +14,8 @@
 
 using namespace std;
 class TaOutput;
+class VAnalysisModule;
+class TaRegression;
 class TaConfig{
 public:
   TaConfig();
@@ -34,6 +36,8 @@ public:
   inline void SetInputName(TString str){input_name=str;};
   inline void SetRunNumber(Int_t i){run_number=i;};
   
+  vector<VAnalysisModule*> GetAnalysisArray();
+
 private:
   TString configName;
   Int_t run_number;
@@ -50,6 +54,8 @@ private:
 
   vector<TString>  ParseLine(TString, TString);
   pair<TString,TString> GetAnalysisTypeName(TString);
+
+
   ClassDef(TaConfig,0);
 };
 
