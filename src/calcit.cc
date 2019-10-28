@@ -66,12 +66,12 @@ int main(int argc, char** argv){
 
   TaDitAna *fDithering = new TaDitAna(fConfig);
   fDithering->LoadModulationData(fInput);
+  fDithering->WriteToTree(fOutput);
   // fDithering->ComputeSensitivities();
   // fDithering->PrintSummary();
-
-  // output_rootfile->cd();
-  // (fDithering->GetSensTree())->Write();
-
+  
+  fOutput->Write();
+  fOutput->Close();
   // vector<TString> det_array = fConfig->GetDetArray();
   // vector<TString> mon_array = fConfig->GetMonArray();
   // vector<TString> coil_array = fConfig->GetCoilArray();

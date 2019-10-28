@@ -1,6 +1,7 @@
 #include "TaAccumulator.hh"
 #include "TaSuperCycle.hh"
 #include "TMath.h"
+#include "TaPrinter.hh"
 
 ClassImp(TaSuperCycle);
 using namespace std;
@@ -58,17 +59,8 @@ void TaSuperCycle::CalcSensitivities(){
       TString coil_name = fCoilArray[icoil]->GetName();
       fSensitivityMap[make_pair(dv_name,coil_name)] = icount++;
       fSamples.push_back(fCovarianceArray[idv][icoil].GetN());
-
       if(fCovarianceArray[idv][icoil].GetN()<=50 ||
 	 fCoilVarianceArray[icoil].GetM2()/fCoilVarianceArray[icoil].GetN()<10 ){
-#ifdef NOISY
-	cout << fDependentVarArray[idv]->GetName() 
-	     << "_vs_"
-	     << fCoilArray[icoil]->GetName() <<" : "
-	     << " has no sufficient data " 
-	     <<"(" << fCovarianceArray[idv][icoil].GetN() << "):" 
-	     << endl;
-#endif  	
 	fSensitivity.push_back(0.0);
 	fSensitivity_err.push_back(-1.0);
 	continue;
@@ -90,14 +82,6 @@ void TaSuperCycle::CalcSensitivities(){
 
 	  fSensitivity.push_back(mySensitiviy);
 	  fSensitivity_err.push_back(myError);
-#ifdef DEBUG 
-	cout << fDependentVarArray[idv]->GetName() 
-	     << "_vs_"
-	     << fCoilArray[icoil]->GetName()
-	     <<"(" << fCovarianceArray[idv][icoil].GetN() << "):" 
-	     << mySensitiviy << "+/- " << myError << endl;
-#endif	
-
 	}
       } else{
 	Double_t a = fDepVarianceArray[idv][icoil].GetM2()- TMath::Power(fCovarianceArray[idv][icoil].GetM2(),2)/fCoilVarianceArray[icoil].GetM2();
@@ -105,17 +89,63 @@ void TaSuperCycle::CalcSensitivities(){
 	Double_t myError = TMath::Sqrt((a/b)/(fCoilVarianceArray[icoil].GetN()-2));
 	fSensitivity.push_back(mySensitiviy);
 	fSensitivity_err.push_back(myError);
-#ifdef DEBUG 
-	cout << fDependentVarArray[idv]->GetName() 
-	     << "_vs_"
-	     << fCoilArray[icoil]->GetName() 
-	     <<"(" << fCovarianceArray[idv][icoil].GetN() << "):" 
-	     << mySensitiviy << "+/- " << myError << endl;
-#endif	
       }
-      
     } // end of coil loop
   } // end of dependent variables loop
+
+      cout << cycID << ":" << fSamples.size() << endl;
 }
 
+void TaSuperCycle::PrintSensitivities(){
+  cout << "-- cycle ID : " << cycID << endl;
+  cout << "-- Coil # : " ;
+  for(int ic=1;ic<=7;ic++)
+    cout << ic << "\t";
+  cout << endl;
+  cout << "-- nSamples : " ;
+  for(int ic=0;ic<7;ic++)
+    cout << fCoilVarianceArray[ic].GetN() << "\t";
+  cout << endl;  
+  for(int idv=0;idv<nDependentVar;idv++){
+    Double_t scale = 1;
+    if(isDetectorFlag[idv])
+      scale = 1e6;
+    else
+      scale = 1e3;
+    TString dv_name = fDependentVarArray[idv]->GetName();
+    cout << dv_name << ":";
+    for(int ic=1;ic<=7;ic++){
+      Int_t index = fSensitivityMap[make_pair(dv_name,Form("bmod_trim%d",ic))];
+      cout <<fSensitivity[index]*scale
+	   <<" +/- "
+	   << fSensitivity_err[index]*scale << "\t" ;
+    }
+    cout << endl;
+  }
+}
+
+void TaSuperCycle::WriteToPrinter(TaPrinter* aPrinter){
+  aPrinter->InsertHorizontalLine();
+  vector<TString> header;
+  header.push_back(" ");
+  for(int ic=1;ic<=7;ic++)
+    header.push_back(Form("bmod_trim%d",ic));
+  aPrinter->AddHeader(header);
+  for(int idv=0;idv<nDependentVar;idv++){
+    Double_t scale = 1;
+    if(isDetectorFlag[idv])
+      scale = 1e6;
+    else
+      scale = 1e3;
+    TString dv_name = fDependentVarArray[idv]->GetName();
+    aPrinter->NewLine();
+    aPrinter->AddStringEntry(dv_name);
+    for(int ic=1;ic<=7;ic++){
+      Int_t index = fSensitivityMap[make_pair(dv_name,Form("bmod_trim%d",ic))];
+      aPrinter->AddFloatEntryWithError(fSensitivity[index]*scale,
+				       fSensitivity_err[index]*scale);
+    }
+  }
+  aPrinter->InsertHorizontalLine();
+}
 

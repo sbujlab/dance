@@ -16,4 +16,6 @@
 #pragma link C++ class TaRegression+;
 #pragma link C++ class TaDataElement+;
 #pragma link C++ class TaDitAna+;
+#pragma link C++ class TaPrinter+;
+#pragma link C++ class TaRow+;
 #endif

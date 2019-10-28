@@ -20,7 +20,7 @@ public:
 
   Bool_t LoadModulationData(TaInput *aInput);
   // Bool_t CalcSensitivities();
-  // void WriteOutput(TaOutput* aOutput);
+  void WriteToTree(TaOutput* aOutput);
   // void PrintSummary();
 
 private:

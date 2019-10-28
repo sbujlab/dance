@@ -4,6 +4,7 @@
 #include "TEventList.h"
 
 #include "TaDitAna.hh"
+#include "TaPrinter.hh"
 
 ClassImp(TaDitAna);
 
@@ -15,15 +16,6 @@ TaDitAna::TaDitAna(TaConfig* aConfig){
   TString bmodcut_str =  aConfig->GetConfigParameter("bmod_cut");
   bmod_cut = bmodcut_str.Data();
   RegisterRawDataElements(aConfig->GetRawElementArray());
-  fDependentVarArray = BuildDataElementArray( aConfig->GetDependentVarArray() );
-
-#ifdef DEBUG
-  auto iter_dep = fDependentVarArray.begin();
-  while(iter_dep!=fDependentVarArray.end()){
-    cout << (*iter_dep)->GetName() << endl;;
-    iter_dep++;
-  }
-#endif
 
   vector<TString> fCoilNameArray;
   for(int i=1;i<=7;i++)
@@ -33,6 +25,7 @@ TaDitAna::TaDitAna(TaConfig* aConfig){
     fCoilArray.push_back(fDataElementMap[Form("bmod_trim%d",i)]);
 
   ProcessDefinitions(aConfig->GetDataElementDefinitions());
+  fDependentVarArray = BuildDataElementArray( aConfig->GetDependentVarArray() );
 
   protoCycle.LoadDetectorList(aConfig->GetDetectorList());
   protoCycle.RegisterDependentVarArray(fDependentVarArray);
@@ -43,6 +36,14 @@ TaDitAna::TaDitAna(TaConfig* aConfig){
     cerr << " Error: Empty Dependent Channel Array " << endl;
   }
 
+#ifdef DEBUG
+  auto iter_dep = fDependentVarArray.begin();
+  while(iter_dep!=fDependentVarArray.end()){
+    cout << (*iter_dep)->GetName() << endl;;
+    iter_dep++;
+  }
+#endif
+
 }
 
 TaDitAna::~TaDitAna(){}
@@ -51,6 +52,7 @@ Bool_t TaDitAna::LoadModulationData(TaInput *aInput){
 #ifdef NOISY
   cout << __FUNCTION__ << endl;
 #endif
+  TaPrinter* fPrinter = new TaPrinter("test.log");
   TTree *evt_tree = aInput->GetEvtTree();
 
   TEventList *elist = new TEventList("elist");
@@ -91,8 +93,9 @@ Bool_t TaDitAna::LoadModulationData(TaInput *aInput){
       continue;
     if(cycle_id >last_cycle_id){
       if(last_cycle_id!=0){
-      	fSuperCycleArray.push_back(supercycle_buff);
 	supercycle_buff.CalcSensitivities();
+	supercycle_buff.WriteToPrinter(fPrinter);
+      	fSuperCycleArray.push_back(supercycle_buff);
       }
 
       supercycle_buff = protoCycle;
@@ -119,109 +122,13 @@ Bool_t TaDitAna::LoadModulationData(TaInput *aInput){
 
   } // end of Good Events loop
   supercycle_buff.CalcSensitivities();
+  supercycle_buff.WriteToPrinter(fPrinter);
   fSuperCycleArray.push_back(supercycle_buff);
-
+  fPrinter->PrintToFile();
+  fPrinter->Print(std::cout);
+  fPrinter->Close();
   return kTRUE;
 }
-
-// Bool_t TaDitAna::CalcSensitivities(){
-//   Int_t cycID;
-//   Int_t run_number = fInput->GetRunNumber();
-//   vector<Double_t> dummy_vec(nCoil);
-//   Vec2D detsens_buff(nDet,dummy_vec);
-//   Vec2D detsens_err_buff(nDet,dummy_vec);
-//   Vec2D monsens_buff(nMon,dummy_vec);
-//   Vec2D monsens_err_buff(nMon,dummy_vec);
-//   sens_tree->Branch("cycID",&cycID);
-//   sens_tree->Branch("run",&run_number);
-//   for(int icoil=0;icoil<nCoil;icoil++){
-//     for(int idet=0;idet<nDet;idet++){
-//       sens_tree->Branch(fDetectorArray[idet]+Form("_coil%d",coil_index[icoil]),
-// 		    &detsens_buff[idet][icoil]);
-//       sens_tree->Branch(fDetectorArray[idet]+Form("_coil%d_err",coil_index[icoil]),
-// 		    &detsens_err_buff[idet][icoil]);
-
-//     }
-//     for(int imon=0;imon<nMon;imon++){
-//       sens_tree->Branch(fMonitorArray[imon]+Form("_coil%d",coil_index[icoil]),
-// 		    &monsens_buff[imon][icoil]);
-//       sens_tree->Branch(fMonitorArray[imon]+Form("_coil%d_err",coil_index[icoil]),
-// 		    &monsens_err_buff[imon][icoil]);
-//     }
-//   }
-//   Int_t nCycle = fSuperCycleArray.size();
-//   DetSens.resize(nDet);
-//   DetSens_err.resize(nDet);
-//   MonSens.resize(nMon);
-//   MonSens_err.resize(nMon);
-//   for(int idet=0;idet<nDet;idet++){
-//     DetSens[idet].resize(nCoil,0.0);
-//     DetSens_err[idet].resize(nCoil,-1.0);
-//   }
-//   for(int imon=0;imon<nMon;imon++){
-//     MonSens[imon].resize(nCoil,0.0);
-//     MonSens_err[imon].resize(nCoil,-1.0);
-//   }
-//   for(int icyc=0;icyc<nCycle;icyc++){
-//     fSuperCycleArray[icyc].ComputeSensitivities();
-//     for(int imon=0;imon<nMon;imon++){
-//       for(int icoil=0;icoil<nCoil;icoil++){
-// 	double this_slope = fSuperCycleArray[icyc].GetMonSens(imon,icoil);
-// 	double this_error = fSuperCycleArray[icyc].GetMonSens_err(imon,icoil);
-// 	monsens_buff[imon][icoil] = this_slope;
-// 	monsens_err_buff[imon][icoil] = this_error;
-// 	if(this_error!=-1){
-// 	  if(MonSens_err[imon][icoil]==-1){
-// 	    MonSens[imon][icoil] = this_slope;
-// 	    MonSens_err[imon][icoil] = this_error;
-// 	  }
-// 	  else{
-// 	    double last_error = MonSens_err[imon][icoil];
-// 	    double last_slope = MonSens[imon][icoil];
-// 	    double weight = 1.0/pow(last_error,2)+1.0/pow(this_error,2);
-// 	    MonSens[imon][icoil]=(1.0/weight)*(last_slope*1.0/pow(last_error,2)+
-// 					       this_slope*1.0/pow(this_error,2));
-// 	    MonSens_err[imon][icoil]=last_error*this_error/sqrt(pow(last_error,2)
-// 								+pow(this_error,2));
-// 	  }
-// 	}
-//       } // coil loop
-//     }// monitor loop
-//     for(int idet=0;idet<nDet;idet++){
-//       for(int icoil=0;icoil<nCoil;icoil++){
-// 	double this_slope = fSuperCycleArray[icyc].GetDetSens(idet,icoil);
-// 	double this_error = fSuperCycleArray[icyc].GetDetSens_err(idet,icoil);
-// 	detsens_buff[idet][icoil]=this_slope;
-// 	detsens_err_buff[idet][icoil]=this_error;
-// 	if(this_error!=-1){
-// 	  if(DetSens_err[idet][icoil]==-1){
-// 	    DetSens[idet][icoil] = this_slope;
-// 	    DetSens_err[idet][icoil] = this_error;
-// 	  }
-// 	  else{
-// 	    double last_error = DetSens_err[idet][icoil];
-// 	    double last_slope = DetSens[idet][icoil];
-// 	    double weight = 1.0/pow(last_error,2)+1.0/pow(this_error,2);
-// 	    DetSens[idet][icoil]=(1.0/weight)*(last_slope*1.0/pow(last_error,2)+
-// 					       this_slope*1.0/pow(this_error,2));
-// 	    DetSens_err[idet][icoil]=last_error*this_error/sqrt(pow(last_error,2)
-// 								+pow(this_error,2));
-// 	  }
-// 	}
-//       }// coil loop
-//     } // Detector loop
-//     cycID = fSuperCycleArray[icyc].GetCycleID();
-//     sens_tree->Fill();
-//   } // Cycle loop
-//   return kTRUE;
-// }
-// void TaDitAna::PrintSummary(){
-// #ifdef NOISY
-//   cout << __FUNCTION__ << endl;
-// #endif
-
-// }
-
 
 void TaDitAna::ProcessDefinitions(vector<pair<TString,TString> > fDefinitions){
 #ifdef NOISY
@@ -286,7 +193,7 @@ void TaDitAna::ProcessDefinitions(vector<pair<TString,TString> > fDefinitions){
     }
 
     iter++;
-    if(fDataElementMap.find(myName)!=fDataElementMap.end())
+    if(fDataElementMap.find(myName)==fDataElementMap.end())
       fDataElementMap[myName]=tobedefined;
   }
 }
@@ -332,4 +239,47 @@ void TaDitAna::RegisterBranchAddress(TTree *fTree){
     fTree->SetBranchStatus(myName,1);
     iter++;
   }
+}
+
+void TaDitAna::WriteToTree(TaOutput* aOutput){
+#ifdef NOISY
+  cout << __PRETTY_FUNCTION__<< endl;
+#endif
+  
+  Int_t nDV = fDependentVarArray.size();
+  Int_t nCoil =7;
+  vector<Double_t> fSens(nDV*nCoil);
+  vector<Double_t> fSensErr(nDV*nCoil);
+  vector<Double_t> fNSamps(nDV*nCoil);
+    for(int idv=0;idv<nDV;idv++){
+    for(int ic=1;ic<=nCoil;ic++){
+      TString dv_name = fDependentVarArray[idv]->GetName();
+      TString coil_name = fCoilArray[ic-1]->GetName();
+      Int_t myIndex = protoCycle.GetIndex(make_pair(dv_name,coil_name));
+      TString chName;
+      chName = Form("%s_coil%d",dv_name.Data(),ic);
+      aOutput->ConstructTreeBranch("sens",chName,fSens[myIndex]);
+      chName = Form("%s_coil%d.err",dv_name.Data(),ic);
+      aOutput->ConstructTreeBranch("sens",chName,fSensErr[myIndex]);
+      chName = Form("%s_coil%d.nsamp",dv_name.Data(),ic);
+      aOutput->ConstructTreeBranch("sens",chName,fNSamps[myIndex]);
+    }
+  }
+  Double_t cycID;
+  aOutput->ConstructTreeBranch("sens","cycID",cycID);
+  auto iter=fSuperCycleArray.begin();
+  while(iter!=fSuperCycleArray.end()){
+    cycID =(Double_t) (*iter).GetCycleID();
+    cout << "Writing cycID:" << cycID << endl;
+    cout << nDV*nCoil << endl;
+    cout << (*iter).GetSize() << endl;
+    for(int i=0;i<nDV*nCoil;i++){
+      fSens[i] = (*iter).GetSensitivity(i);
+      fSensErr[i] = (*iter).GetErrorBar(i);
+      fNSamps[i]=(*iter).GetNSamples(i);
+    }
+    aOutput->FillTree("sens");
+    iter++;
+  }
+
 }
