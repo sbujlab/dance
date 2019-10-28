@@ -1,0 +1,37 @@
+#ifndef __TADATAELEMENT_HH__
+#define __TADATAELEMENT_HH__
+
+#include "TTree.h"
+#include "TBranch.h"
+#include "TLeaf.h"
+using namespace std;
+class TaDataElement{
+  friend class TBranch;
+  friend class TLeaf;
+public:
+  TaDataElement(TString name){
+    myName = name;
+  }
+  TaDataElement(TString name, TBranch* fBranch_ptr){
+    myName= name;
+    RegisterBranchAddress(fBranch_ptr);
+  };
+  virtual ~TaDataElement(){};
+
+  void RegisterBranchAddress(TBranch*);
+  Double_t GetHwSum();
+  Double_t GetDeviceErrorCode();
+  void AddElement(Double_t, TaDataElement*);
+  TString GetName(){return myName;};
+
+private:
+  TString myName;
+  vector< pair<Double_t,TaDataElement* > > fElementArray;
+  Double_t fhw_sum;
+  Double_t fDevice_Error_Code;
+  
+  ClassDef(TaDataElement,0);
+
+};
+
+#endif

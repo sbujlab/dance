@@ -9,7 +9,7 @@ void VAnalysisModule::Init(TString type, TString name,TaConfig *aConfig){
   Int_t ana_index = aConfig->GetAnalysisIndex(type,name);
   tree_name = aConfig->GetAnalysisParameter(ana_index,"tree_name");
   branch_prefix = aConfig->GetAnalysisParameter(ana_index,"branch_prefix");
-  sDVlist = aConfig->GetDVlist(type,name);
+  sDVlist = aConfig->GetDVlist();
   sIVlist = aConfig->GetIVlist(type,name);
   Int_t nDV = sDVlist.size();
   vector<Double_t> subtraction{1,-1};

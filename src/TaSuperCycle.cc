@@ -4,108 +4,118 @@
 
 ClassImp(TaSuperCycle);
 using namespace std;
-
-TaSuperCycle::TaSuperCycle(){
+void TaSuperCycle::LoadDetectorList(vector<TString> input){
+  fDetectorList = input;
 }
-
-TaSuperCycle::~TaSuperCycle(){
-}
-
-// void TaSuperCycle::Init(TaConfig *aConfig){}
-void TaSuperCycle::LoadCoilData(Int_t icoil,Double_t trimcard_value){
-  if(icoil<nCoil)
-    CoilM2[icoil].Update(trimcard_value);
-  else{
-    cerr << __FUNCTION__ 
-	 << " Error:  coil id over limit " << endl;
-  }
-}
-
-void TaSuperCycle::LoadDetData(Int_t idet, Int_t icoil,
-			       Double_t det_value, Double_t trimcard_value){
-  
-  if(icoil<nCoil && idet< nDet){
-    trimcard_value = trimcard_value;
-    CovDetCoil[idet][icoil].Update(det_value,trimcard_value);
-    DetM2[idet][icoil].Update(det_value);
-  }
-  else{
-    cerr << __FUNCTION__ 
-	 << " Error:  coil or detector id over limit " << endl;
+void TaSuperCycle::RegisterDependentVarArray(vector<TaDataElement*> input_array){
+#ifdef NOISY
+  cout << __PRETTY_FUNCTION__ << endl;
+#endif
+  fDependentVarArray = input_array;
+  nDependentVar = fDependentVarArray.size();
+  for(int idv=0;idv<nDependentVar;idv++){
+    auto iter=find(fDetectorList.begin(),fDetectorList.end(),
+		   fDependentVarArray[idv]->GetName());
+    if(iter!=fDetectorList.end())
+      isDetectorFlag.push_back(kTRUE);
+    else
+      isDetectorFlag.push_back(kFALSE);
   }
 }
 
-void TaSuperCycle::LoadMonData(Int_t imon, Int_t icoil,
-			       Double_t mon_value, Double_t trimcard_value){
-  if(icoil<nCoil && imon< nMon){
-    trimcard_value = trimcard_value;
-    CovMonCoil[imon][icoil].Update(mon_value,trimcard_value);
-    MonM2[imon][icoil].Update(mon_value);
-  }
-  else{
-    cerr << __FUNCTION__ 
-	 << " Error:  coil or monitor id over limit " << endl;
-  }
-
+void TaSuperCycle::RegisterCoilArray(vector<TaDataElement*> input_array){
+  fCoilArray = input_array;
+  nCoil = fCoilArray.size();
+}
+void TaSuperCycle::InitAccumulators(){
+#ifdef NOISY
+  cout << __PRETTY_FUNCTION__ << endl;
+#endif
+  fCoilVarianceArray.resize(nCoil);
+  fCovarianceArray.resize(nDependentVar,fCoilVarianceArray);
+  fDepVarianceArray.resize(nDependentVar,fCoilVarianceArray);
 }
 
-void TaSuperCycle::Resize(Int_t ndet, Int_t nmon, Int_t ncoil){
-  nDet = ndet;
-  nMon = nmon;
-  nCoil= ncoil;
-  AccVector dummy_vs_coil;
-  dummy_vs_coil.resize(ncoil);
-  CoilM2.resize(ncoil);
-  vector<Double_t> dummy_err;
-  dummy_err.resize(ncoil,-1.0);
-  vector<Double_t> dummy_zero;
-  dummy_zero.resize(ncoil,0.0);
+void TaSuperCycle::UpdateSamples(Int_t cur_index){
 
-  for(int idet=0;idet<ndet;idet++){
-    CovDetCoil.push_back(dummy_vs_coil);
-    DetM2.push_back(dummy_vs_coil);
-    detSens.push_back(dummy_zero);
-    detSens_err.push_back(dummy_err);
-  }
-  for(int imon=0;imon<nmon;imon++){
-    CovMonCoil.push_back(dummy_vs_coil);
-    MonM2.push_back(dummy_vs_coil);
-    monSens.push_back(dummy_zero);
-    monSens_err.push_back(dummy_err);
-  }
+  fCoilVarianceArray[cur_index].Update(fCoilArray[cur_index]->GetHwSum() );
+  for(int idv=0;idv<nDependentVar;idv++)
+    fDepVarianceArray[idv][cur_index].Update( fDependentVarArray[idv]->GetHwSum() );
+
+  for(int idv=0;idv<nDependentVar;idv++)
+    fCovarianceArray[idv][cur_index].Update( fDependentVarArray[idv]->GetHwSum(),
+					     fCoilArray[cur_index]->GetHwSum());
+
 }
+void TaSuperCycle::CalcSensitivities(){
+#ifdef NOISY
+  cout << __PRETTY_FUNCTION__ << endl;
+#endif
+  Int_t icount=0;
+  for(int idv=0;idv<nDependentVar;idv++){
+    TString dv_name = fDependentVarArray[idv]->GetName();
+    for(int icoil=0;icoil<nCoil;icoil++){
+      TString coil_name = fCoilArray[icoil]->GetName();
+      fSensitivityMap[make_pair(dv_name,coil_name)] = icount++;
+      fSamples.push_back(fCovarianceArray[idv][icoil].GetN());
 
-void TaSuperCycle::ComputeSensitivities(){
-  
-  for(int icoil=0;icoil<nCoil;icoil++){
-    // Check if it has enough statistics and
-    nSamples.push_back(CoilM2[icoil].GetN());
-    if( CoilM2[icoil].GetN()<200)
-      continue;
-    // Check if coil is activated 
-    if(CoilM2[icoil].GetM2()/CoilM2[icoil].GetN()<5)
-      continue;
-    for(int idet=0;idet<nDet;idet++){
-      double numerator= CovDetCoil[idet][icoil].GetM2();
-      double denominator =CoilM2[icoil].GetM2();
-      detSens[idet][icoil] = 1e6*(numerator/denominator)/TMath::Abs(DetM2[idet][icoil].GetMean1()); 
-      // Unit (ppm / trimcard_counts)
-      double a = DetM2[idet][icoil].GetM2()-TMath::Power(CovDetCoil[idet][icoil].GetM2(),2)/CoilM2[icoil].GetM2();
-      double b = CoilM2[icoil].GetM2();
-      detSens_err[idet][icoil] = TMath::Sqrt((a/b)/(CoilM2[icoil].GetN()-2));
-      detSens_err[idet][icoil] = 1e6*detSens_err[idet][icoil]/TMath::Abs(DetM2[idet][icoil].GetMean1());
-    }
-    for(int imon=0;imon<nMon;imon++){
-      double numerator= CovMonCoil[imon][icoil].GetM2();
-      double denominator =CoilM2[icoil].GetM2();
-      monSens[imon][icoil] = 1e3*numerator/denominator;
-      // Unit (um / trimcard_counts)
-      double a = MonM2[imon][icoil].GetM2()-TMath::Power(CovMonCoil[imon][icoil].GetM2(),2)/CoilM2[icoil].GetM2();
-      double b = CoilM2[icoil].GetM2();
-      monSens_err[imon][icoil] = 1e3*TMath::Sqrt((a/b)/(CoilM2[icoil].GetN()-2));
+      if(fCovarianceArray[idv][icoil].GetN()<=50 ||
+	 fCoilVarianceArray[icoil].GetM2()/fCoilVarianceArray[icoil].GetN()<10 ){
+#ifdef NOISY
+	cout << fDependentVarArray[idv]->GetName() 
+	     << "_vs_"
+	     << fCoilArray[icoil]->GetName() <<" : "
+	     << " has no sufficient data " 
+	     <<"(" << fCovarianceArray[idv][icoil].GetN() << "):" 
+	     << endl;
+#endif  	
+	fSensitivity.push_back(0.0);
+	fSensitivity_err.push_back(-1.0);
+	continue;
+      }
+      double numerator= fCovarianceArray[idv][icoil].GetM2();
+      double denominator = fCoilVarianceArray[icoil].GetM2();
+      double mySensitiviy =  numerator/denominator;
+      if(isDetectorFlag[idv]){
+	double detector_norm = fDepVarianceArray[idv][icoil].GetMean1();
+	if(detector_norm<=0){
+	  fSensitivity.push_back(0.0);
+	  fSensitivity_err.push_back(-1.0);
+	}else{
+	  mySensitiviy /= detector_norm;
+	  Double_t a = fDepVarianceArray[idv][icoil].GetM2()- TMath::Power(fCovarianceArray[idv][icoil].GetM2(),2)/fCoilVarianceArray[icoil].GetM2();
+	  Double_t b = fCoilVarianceArray[icoil].GetM2();
+	  Double_t myError = TMath::Sqrt((a/b)/(fCoilVarianceArray[icoil].GetN()-2));
+	  myError /= detector_norm;
 
-    }
-  }
+	  fSensitivity.push_back(mySensitiviy);
+	  fSensitivity_err.push_back(myError);
+#ifdef DEBUG 
+	cout << fDependentVarArray[idv]->GetName() 
+	     << "_vs_"
+	     << fCoilArray[icoil]->GetName()
+	     <<"(" << fCovarianceArray[idv][icoil].GetN() << "):" 
+	     << mySensitiviy << "+/- " << myError << endl;
+#endif	
+
+	}
+      } else{
+	Double_t a = fDepVarianceArray[idv][icoil].GetM2()- TMath::Power(fCovarianceArray[idv][icoil].GetM2(),2)/fCoilVarianceArray[icoil].GetM2();
+	Double_t b = fCoilVarianceArray[icoil].GetM2();
+	Double_t myError = TMath::Sqrt((a/b)/(fCoilVarianceArray[icoil].GetN()-2));
+	fSensitivity.push_back(mySensitiviy);
+	fSensitivity_err.push_back(myError);
+#ifdef DEBUG 
+	cout << fDependentVarArray[idv]->GetName() 
+	     << "_vs_"
+	     << fCoilArray[icoil]->GetName() 
+	     <<"(" << fCovarianceArray[idv][icoil].GetN() << "):" 
+	     << mySensitiviy << "+/- " << myError << endl;
+#endif	
+      }
+      
+    } // end of coil loop
+  } // end of dependent variables loop
 }
 
 

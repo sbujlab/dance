@@ -23,11 +23,18 @@ public:
 
   Bool_t ParseFile(TString fileName);
 
-  vector<TString> GetDVlist(TString type, TString name);
+  inline vector<TString> GetDVlist() const { return fDVlist;};
   vector<TString> GetIVlist(TString type, TString name);
   TString GetConfigParameter(TString key);
   TString GetAnalysisParameter(Int_t index, TString key);
   Int_t GetAnalysisIndex(TString type, TString name);
+  
+  inline vector<TString> GetDependentVarArray() const { return fDependentVarArray;};
+  inline vector<TString> GetDetectorList() const { return fDetectorArray;};
+  inline vector<TString> GetRawElementArray() const { return fRawElementArray;};
+  inline vector< pair<TString,TString> > GetDataElementDefinitions() const { 
+    return fDataElementDefinitions;
+  };
 
   inline Int_t GetRunNumber() const { return run_number;};
   inline vector<TString> GetDeviceList() const {return device_list;};
@@ -37,7 +44,7 @@ public:
   inline void SetRunNumber(Int_t i){run_number=i;};
   
   vector<VAnalysisModule*> GetAnalysisArray();
-
+  vector<TString> ParseChannelDefinition(TString );
 private:
   TString configName;
   Int_t run_number;
@@ -45,7 +52,7 @@ private:
 
   map<TString, TString> fConfigParameters;
   map< pair<Int_t,TString> , TString> fAnalysisParameters;
-  map< Int_t , vector<TString> > fDVMap;
+  vector<TString>  fDVlist;
   map< Int_t , vector<TString> > fIVMap;
   map<TString,Int_t> device_map;
   vector<TString> device_list;
@@ -54,6 +61,17 @@ private:
 
   vector<TString>  ParseLine(TString, TString);
   pair<TString,TString> GetAnalysisTypeName(TString);
+
+  // Beam Mod elements
+  vector<TString> fDetectorArray;
+  vector<TString> fDependentVarArray;  // for dithering sensitivity
+
+  vector<TString> fRawElementArray;
+  vector<TString> fDefinedElementArray;
+  vector< pair<TString, TString> > fDataElementDefinitions;
+
+  map< Int_t, vector<TString> > fMonitorMap; // by Analysis Index
+  map< Int_t, vector<TString> > fCoilMap;
 
 
   ClassDef(TaConfig,0);

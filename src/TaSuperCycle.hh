@@ -3,52 +3,52 @@
 
 #include "Rtypes.h"
 #include "TObject.h"
+#include "TString.h"
+
 #include "TaConfig.hh"
 #include "TaAccumulator.hh"
+#include "TaDataElement.hh"
 #include <vector>
+
 using namespace std;
 
 class TaSuperCycle: public TObject{
 public:
-  TaSuperCycle();
-  ~TaSuperCycle();
-  // void Init(TaConfig* aConfig);
-  void LoadCoilData(Int_t, Double_t);
-  void LoadDetData(Int_t,Int_t,Double_t,Double_t);
-  void LoadMonData(Int_t,Int_t,Double_t,Double_t);
-  void Resize(Int_t ndet, Int_t nmon, Int_t ncoil);
-  void ComputeSensitivities();
+  TaSuperCycle(){};
+  virtual ~TaSuperCycle(){};
+
+  void RegisterDependentVarArray(vector<TaDataElement*>);
+  void LoadDetectorList( vector<TString> );
+  void RegisterCoilArray(vector<TaDataElement*>);
+
+  void InitAccumulators();
+  void UpdateSamples(Int_t );
+  void CalcSensitivities();
+
   inline void SetCycleID(Int_t id){ cycID = id;};
   inline Int_t GetCycleID(){ return cycID;};
-  inline Double_t GetMonSens(Int_t imon,Int_t ic) const {
-    return monSens[imon][ic];
-  };
-  inline Double_t GetDetSens(Int_t idet,Int_t ic) const {
-    return detSens[idet][ic];
-  };
-  inline Double_t GetMonSens_err(Int_t imon,Int_t ic) const {
-    return monSens_err[imon][ic];
-  };
-  inline Double_t GetDetSens_err(Int_t idet,Int_t ic) const {
-    return detSens_err[idet][ic];
-  };
-  inline Int_t GetNSamples(Int_t i){ return nSamples[i];};
-private:
-  Int_t nDet;
-  Int_t nMon;
-  Int_t nCoil;
-  vector<Int_t> nSamples;
-  // vector<Int_t> coil_index;
-  vector<vector<Double_t> > detSens; //[idet][icoil]
-  vector<vector<Double_t> > detSens_err;
-  vector<vector<Double_t> > monSens; //[imon][icoil]
-  vector<vector<Double_t> > monSens_err;
+  inline Int_t GetNSamples(Int_t i){ return fSamples[i];};
 
-  vector<AccVector> DetM2; // [idet][icoil]
-  vector<AccVector> MonM2; // [imon][icoil]
-  vector<AccVector> CovDetCoil;
-  vector<AccVector> CovMonCoil;
-  AccVector CoilM2; //[icoil]
+  // void WriteSensTree(TOutput *aOutput);
+private:
+
+  Int_t nDependentVar;
+  Int_t nCoil;
+  vector<TString> fDetectorList;
+  
+  vector<TaDataElement*> fDependentVarArray;
+  vector<TaDataElement*> fCoilArray;
+  vector<Bool_t> isDetectorFlag;
+
+  vector< vector<TaAccumulator> > fCovarianceArray; 
+  vector< vector<TaAccumulator> > fDepVarianceArray;
+  vector<TaAccumulator> fCoilVarianceArray;
+
+
+  vector<Int_t> fSamples;
+  vector<Double_t> fSensitivity;
+  vector<Double_t> fSensitivity_err;
+  map< pair<TString, TString>, Int_t > fSensitivityMap;
 
   Int_t cycID;
   ClassDef(TaSuperCycle,0);

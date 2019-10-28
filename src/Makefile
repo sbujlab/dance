@@ -16,11 +16,11 @@ INCLUDES = -I$(ROOTINC)
 LIBS	:= $(ROOTLIBS)
 LDFLAGS := $(shell $(ROOTCONFIG) --ldflags)
 LD	:= $(shell $(ROOTCONFIG) --ld)
-OBJS	:= TaConfig.o TaInput.o TaOutput.o TaChannel.o TaAccumulator.o VAnalysisModule.o TaRegression.o
+OBJS	:= TaConfig.o TaInput.o TaOutput.o TaChannel.o TaAccumulator.o VAnalysisModule.o TaRegression.o TaDitAna.o TaSuperCycle.o TaDataElement.o
 HDR	:= $(OBJS:.o=.hh) 
 DEPS 	:= $(OBJS:.o=.d)
 
-all:  $(OBJS) main.o dance_Dict dance libdance.so
+all:  $(OBJS) main.o dance_Dict dance calcit libdance.so
 
 dance_Dict: $(HDR) danceLinkDef.hh
 	rootcint -f $@.cc -c $(INCLUDES) $^;
@@ -33,6 +33,10 @@ main.o: main.cc
 
 dance:$(OBJS) dance_Dict.o main.o
 	  $(LD) $(CXXFLAGS) $(ROOTLIBS) $^ -o $@;
+
+calcit: calcit.cc dance_Dict.o $(OBJS)	
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $(ROOTLIBS) $^ -o $@;
+
 libdance.so: $(OBJS) dance_Dict.o
 	$(LD) $(LDFLAGS) $(ROOTLIBS) -shared $^ -o $@;
 clean:
@@ -40,6 +44,7 @@ clean:
 	rm -f *Dict*;	
 install:all
 	mv dance ../;
+	mv calcit ../;
 %.d:	%.cc
 	@echo Creating dependencies for $<
 	@$(SHELL) -ec '$(MAKEDEPEND) -std=c++11 -MM $(INCLUDES) -c $< \

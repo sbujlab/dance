@@ -14,5 +14,6 @@
 #pragma link C++ class TaChannel+;
 #pragma link C++ class VAnalysisModule+;
 #pragma link C++ class TaRegression+;
-
+#pragma link C++ class TaDataElement+;
+#pragma link C++ class TaDitAna+;
 #endif
