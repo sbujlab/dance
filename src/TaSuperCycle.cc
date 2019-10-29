@@ -84,21 +84,24 @@ Bool_t TaSuperCycle::MakeMatrixFromList(vector<TString> row_list,
 Bool_t TaSuperCycle::GetMatrixSolution(TMatrixD lhs, TMatrixD rhs,
 				       TMatrixD &sol){
 #ifdef NOISY
-cout << __PRETTY_FUNCTION__<< endl;
+  cout << __PRETTY_FUNCTION__<< endl;
 #endif
   Bool_t isGood;
-  TDecompLU lu(rhs);
+  TMatrixD mX(rhs);
+  TMatrixD mXT = rhs.T();
+  TMatrixD mXsq = mX*mXT;
+  TDecompLU lu(mXsq);
   if(!lu.Decompose()){
     cout << "LU Decomposition failed, rhs matrix may be singular" << endl;
     cout << "Fail to solve and Zero out solution" << endl;
 #ifdef DEBUG  
-    rhs.Print();
+    mXsq.Print();
 #endif
     sol.Zero();
     isGood = kFALSE;
   }else{
-    TMatrixD inv_rhs = rhs.Invert();
-    sol = lhs*inv_rhs;
+    TMatrixD inv = (mXsq).Invert();
+    sol = lhs*mXT*inv;
 #ifdef NOISY  
     sol.Print();
 #endif
@@ -266,7 +269,7 @@ void TaSuperCycle::ConstructSlopeTreeBranch(TaOutput *aOutput,Int_t index,
 }
 
 void TaSuperCycle::FillSlopeTree(TaOutput *aOutput,Int_t index,
-				       vector<Double_t> &fBranchValues){
+				 vector<Double_t> &fBranchValues){
   Int_t ndim = fSlopes[index].size();
   for(int i=0;i<ndim;i++){
     fBranchValues[i] = fSlopes[index][i];
