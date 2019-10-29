@@ -6,8 +6,6 @@
 #include "TLeaf.h"
 using namespace std;
 class TaDataElement{
-  friend class TBranch;
-  friend class TLeaf;
 public:
   TaDataElement(TString name){
     myName = name;
@@ -23,15 +21,20 @@ public:
   Double_t GetDeviceErrorCode();
   void AddElement(Double_t, TaDataElement*);
   TString GetName(){return myName;};
-
+  pair<Double_t ,TaDataElement*> GetElement(Int_t i) const {return fElementArray[i];};
+  Int_t GetNumberOfElements(){
+    if(fElementArray.size()<=1)
+      return 1;
+    else
+      return fElementArray.size();
+  }
 private:
   TString myName;
   vector< pair<Double_t,TaDataElement* > > fElementArray;
   Double_t fhw_sum;
   Double_t fDevice_Error_Code;
-  
-  ClassDef(TaDataElement,0);
 
+  ClassDef(TaDataElement,0);
 };
 
 #endif

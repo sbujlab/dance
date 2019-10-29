@@ -66,9 +66,9 @@ int main(int argc, char** argv){
 
   TaDitAna *fDithering = new TaDitAna(fConfig);
   fDithering->LoadModulationData(fInput);
+  fDithering->PrintSummary(fOutput);
   fDithering->WriteToTree(fOutput);
   // fDithering->ComputeSensitivities();
-  // fDithering->PrintSummary();
   
   fOutput->Write();
   fOutput->Close();

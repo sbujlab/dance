@@ -1,7 +1,9 @@
 #include "TaAccumulator.hh"
 #include "TaSuperCycle.hh"
-#include "TMath.h"
 #include "TaPrinter.hh"
+
+#include "TMath.h"
+#include "TDecompLU.h"
 
 ClassImp(TaSuperCycle);
 using namespace std;
@@ -15,6 +17,7 @@ void TaSuperCycle::RegisterDependentVarArray(vector<TaDataElement*> input_array)
   fDependentVarArray = input_array;
   nDependentVar = fDependentVarArray.size();
   for(int idv=0;idv<nDependentVar;idv++){
+    fDVIndexMapByName[ (fDependentVarArray[idv]->GetName()) ]=idv;
     auto iter=find(fDetectorList.begin(),fDetectorList.end(),
 		   fDependentVarArray[idv]->GetName());
     if(iter!=fDetectorList.end())
@@ -27,6 +30,81 @@ void TaSuperCycle::RegisterDependentVarArray(vector<TaDataElement*> input_array)
 void TaSuperCycle::RegisterCoilArray(vector<TaDataElement*> input_array){
   fCoilArray = input_array;
   nCoil = fCoilArray.size();
+}
+
+void TaSuperCycle::ConfigSlopesCalculation(TaConfig *fConfig){
+  vector<TString> fAnalysisTypeArray = fConfig->GetAnalysisTypeArray();
+  auto iter_anatype = fAnalysisTypeArray.begin();
+  while(iter_anatype!=fAnalysisTypeArray.end()){
+    if((*iter_anatype)=="slope"){
+      Int_t ana_index = iter_anatype-fAnalysisTypeArray.begin();
+      kScheme.push_back(fConfig->GetAnalysisParameter(ana_index,"scheme"));
+      fcoil_list.push_back(fConfig->GetCoilList(ana_index));
+      fmonitor_list.push_back(fConfig->GetMonitorList(ana_index));
+      slope_tree_name.push_back(fConfig->GetAnalysisParameter(ana_index,"tree_name"));
+    }
+    iter_anatype++;
+  }
+}
+
+void TaSuperCycle::CalcSlopes(){
+  Int_t nMod = kScheme.size();
+  for(int imod =0;imod<nMod;imod++){
+    TMatrixD mrhs, mlhs;
+    Bool_t kComplete1 = MakeMatrixFromList( fmonitor_list[imod],fcoil_list[imod], mrhs );
+    Bool_t kComplete2 = MakeMatrixFromList( fDetectorList, fcoil_list[imod], mlhs );
+    Bool_t isGood=kFALSE;
+    TMatrixD sol(fDetectorList.size(), fmonitor_list[imod].size());
+    if(kComplete2 && kComplete1)
+      isGood = GetMatrixSolution( mlhs , mrhs, sol);
+    isGoodSlopes.push_back(isGood);
+    fSolutionArray.push_back(sol);
+  }
+}
+
+Bool_t TaSuperCycle::MakeMatrixFromList(vector<TString> row_list,
+					vector<TString> col_list,
+					TMatrixD &input){
+  Bool_t isComplete = kTRUE;
+  Int_t nrow = row_list.size();
+  Int_t ncol = col_list.size();
+  input.ResizeTo(nrow,ncol);
+  for(int irow=0;irow<nrow;irow++){
+    for(int icol=0;icol<ncol;icol++){
+      Int_t sens_index = fSensitivityMap[make_pair(row_list[irow],col_list[icol])];
+      if(fSensitivity_err[sens_index]>0)
+	input(irow,icol) = fSensitivity[sens_index];
+      else
+	return kFALSE;
+    }
+  }
+  return isComplete;
+}
+
+Bool_t TaSuperCycle::GetMatrixSolution(TMatrixD lhs, TMatrixD rhs,
+				       TMatrixD &sol){
+#ifdef NOISY
+cout << __PRETTY_FUNCTION__<< endl;
+#endif
+  Bool_t isGood;
+  TDecompLU lu(rhs);
+  if(!lu.Decompose()){
+    cout << "LU Decomposition failed, rhs matrix may be singular" << endl;
+    cout << "Fail to solve and Zero out solution" << endl;
+#ifdef DEBUG  
+    rhs.Print();
+#endif
+    sol.Zero();
+    isGood = kFALSE;
+  }else{
+    TMatrixD inv_rhs = rhs.Invert();
+    sol = lhs*inv_rhs;
+#ifdef NOISY  
+    sol.Print();
+#endif
+    isGood = kTRUE;
+  }
+  return isGood;
 }
 void TaSuperCycle::InitAccumulators(){
 #ifdef NOISY
@@ -92,8 +170,8 @@ void TaSuperCycle::CalcSensitivities(){
       }
     } // end of coil loop
   } // end of dependent variables loop
-
-      cout << cycID << ":" << fSamples.size() << endl;
+  CalcSlopes();
+  FillSlopes();
 }
 
 void TaSuperCycle::PrintSensitivities(){
@@ -149,3 +227,49 @@ void TaSuperCycle::WriteToPrinter(TaPrinter* aPrinter){
   aPrinter->InsertHorizontalLine();
 }
 
+void TaSuperCycle::FillSlopes(){
+  Int_t nMode = kScheme.size();
+  for(int imod=0;imod<nMode;imod++){
+    vector< pair<TString, TString> > fDMPairArray;
+    vector< Double_t > fSlopeVector;
+    vector<TString> monitor_list = fmonitor_list[imod];
+    auto iter_mon = monitor_list.begin();
+    while(iter_mon!=monitor_list.end()){
+      Int_t imon  = iter_mon-monitor_list.begin();
+      Int_t myIndex = fDVIndexMapByName[*iter_mon];
+      TaDataElement* this_element = fDependentVarArray[ myIndex];
+      auto iter_det = fDetectorList.begin();
+      while(iter_det!=fDetectorList.end()){
+	Int_t idet = iter_det - fDetectorList.begin();
+	fDMPairArray.push_back(make_pair(*iter_det,*iter_mon));
+	fSlopeVector.push_back(fSolutionArray[imod](idet,imon));
+	iter_det++;
+      }
+      iter_mon++;
+    }
+    fSlopes.push_back(fSlopeVector);
+    fDetMonPairArray.push_back(fDMPairArray);
+  }
+}
+
+void TaSuperCycle::ConstructSlopeTreeBranch(TaOutput *aOutput,Int_t index,
+					    vector<Double_t> &fBranchValues){
+  Int_t ndim = fSlopes[index].size();
+  fBranchValues.resize(ndim,0);
+  
+  for(int i=0;i<ndim;i++){
+    TString branch_name = Form("%s_%s",
+			       (fDetMonPairArray[index][i].first).Data(),
+			       (fDetMonPairArray[index][i].second).Data());
+    aOutput->ConstructTreeBranch(slope_tree_name[index],branch_name,fBranchValues[i]);
+  }
+}
+
+void TaSuperCycle::FillSlopeTree(TaOutput *aOutput,Int_t index,
+				       vector<Double_t> &fBranchValues){
+  Int_t ndim = fSlopes[index].size();
+  for(int i=0;i<ndim;i++){
+    fBranchValues[i] = fSlopes[index][i];
+  }
+  aOutput->FillTree(slope_tree_name[index]);
+}

@@ -24,16 +24,20 @@ public:
   Bool_t ParseFile(TString fileName);
 
   inline vector<TString> GetDVlist() const { return fDVlist;};
-  vector<TString> GetIVlist(Int_t ana_index);
+  inline vector<TString> GetIVlist(Int_t ana_index) { return fIVMap[ana_index];};
   TString GetConfigParameter(TString key);
   TString GetAnalysisParameter(Int_t index, TString key);
-  
+  inline vector<TString> GetAnalysisTypeArray() const {return fAnalysisTypeArray;};
+
   inline vector<TString> GetDependentVarArray() const { return fDependentVarArray;};
   inline vector<TString> GetDetectorList() const { return fDetectorArray;};
   inline vector<TString> GetRawElementArray() const { return fRawElementArray;};
   inline vector< pair<TString,TString> > GetDataElementDefinitions() const { 
     return fDataElementDefinitions;
   };
+
+  inline vector<TString> GetCoilList(Int_t i) {  return fCoilMap[i];};
+  inline vector<TString> GetMonitorList(Int_t i) {  return fMonitorMap[i];};
 
   inline Int_t GetRunNumber() const { return run_number;};
   inline vector<TString> GetDeviceList() const {return device_list;};
@@ -44,7 +48,9 @@ public:
   
   vector<VAnalysisModule*> GetAnalysisArray();
   vector<TString> ParseChannelDefinition(TString );
+  
 private:
+
   TString configName;
   Int_t run_number;
   TString input_name;
@@ -71,7 +77,6 @@ private:
 
   map< Int_t, vector<TString> > fMonitorMap; // by Analysis Index
   map< Int_t, vector<TString> > fCoilMap;
-
 
   ClassDef(TaConfig,0);
 };

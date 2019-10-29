@@ -169,16 +169,6 @@ TString TaConfig::ParseAnalysisType(TString sline){
   return this_type;
 }
 
-// vector<TString> TaConfig::GetDVlist(TString type,TString name){
-//   pair<TString,TString> aTypeName = make_pair(type,name);
-//   Int_t myIndex = fAnalysisMap[aTypeName];
-//   return fDVMap[myIndex];
-// }
-
-vector<TString> TaConfig::GetIVlist(Int_t ana_index){
-  return fIVMap[ana_index];
-}
-
 TString TaConfig::GetConfigParameter(TString key){
   return fConfigParameters[key];
 }

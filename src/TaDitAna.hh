@@ -16,15 +16,14 @@ using namespace std;
 class TaDitAna: public TObject{
 public:
   TaDitAna(TaConfig *aConfig);
-  ~TaDitAna();
+  ~TaDitAna(){};
 
   Bool_t LoadModulationData(TaInput *aInput);
   // Bool_t CalcSensitivities();
   void WriteToTree(TaOutput* aOutput);
-  // void PrintSummary();
+  void PrintSummary(TaOutput* aOutput);
 
 private:
-
   void RegisterRawDataElements(vector<TString> device_array);
   void ProcessDefinitions(vector<pair<TString,TString> > fDefinitions);
   vector<TaDataElement*> BuildDataElementArray( vector<TString> device_array);
@@ -32,7 +31,7 @@ private:
   TCut bmod_cut;
   TString tree_name;
   
-  TaSuperCycle protoCycle;
+  TaSuperCycle templateCycle;
   vector<TaSuperCycle> fSuperCycleArray;
 
   vector<TaDataElement*> fCoilArray;
@@ -40,9 +39,7 @@ private:
   vector<TaDataElement*> fRawDataElementArray;
   
   map<TString, TaDataElement*> fDataElementMap;
-  // map<TString, TaDataElement* > fRawDataElementMap;
-  // map< TString, TaDataElement* > fDefinedElementMap;
-
+  
   ClassDef(TaDitAna,0);
 };
 

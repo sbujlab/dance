@@ -27,10 +27,11 @@ TaDitAna::TaDitAna(TaConfig* aConfig){
   ProcessDefinitions(aConfig->GetDataElementDefinitions());
   fDependentVarArray = BuildDataElementArray( aConfig->GetDependentVarArray() );
 
-  protoCycle.LoadDetectorList(aConfig->GetDetectorList());
-  protoCycle.RegisterDependentVarArray(fDependentVarArray);
-  protoCycle.RegisterCoilArray(fCoilArray);
-  protoCycle.InitAccumulators();
+  templateCycle.LoadDetectorList(aConfig->GetDetectorList());
+  templateCycle.RegisterDependentVarArray(fDependentVarArray);
+  templateCycle.RegisterCoilArray(fCoilArray);
+  templateCycle.InitAccumulators();
+  templateCycle.ConfigSlopesCalculation(aConfig);
 
   if(fDependentVarArray.size()==0){
     cerr << " Error: Empty Dependent Channel Array " << endl;
@@ -46,13 +47,10 @@ TaDitAna::TaDitAna(TaConfig* aConfig){
 
 }
 
-TaDitAna::~TaDitAna(){}
-
 Bool_t TaDitAna::LoadModulationData(TaInput *aInput){
 #ifdef NOISY
   cout << __FUNCTION__ << endl;
 #endif
-  TaPrinter* fPrinter = new TaPrinter("test.log");
   TTree *evt_tree = aInput->GetEvtTree();
 
   TEventList *elist = new TEventList("elist");
@@ -81,7 +79,7 @@ Bool_t TaDitAna::LoadModulationData(TaInput *aInput){
   //***
   RegisterBranchAddress(evt_tree);
   //***
-  TaSuperCycle supercycle_buff = protoCycle;
+  TaSuperCycle supercycle_buff = templateCycle;
   Double_t last_cycle_id=0;
   Double_t last_obj=0;
   Int_t cur_index=0;
@@ -94,11 +92,10 @@ Bool_t TaDitAna::LoadModulationData(TaInput *aInput){
     if(cycle_id >last_cycle_id){
       if(last_cycle_id!=0){
 	supercycle_buff.CalcSensitivities();
-	supercycle_buff.WriteToPrinter(fPrinter);
       	fSuperCycleArray.push_back(supercycle_buff);
       }
 
-      supercycle_buff = protoCycle;
+      supercycle_buff = templateCycle;
       cout <<" -- Found a new supercycle: ID = " << cycle_id << endl;
       cout <<" -- Starting at CodaEventNumber: " << CodaEventNumber << endl;
       last_cycle_id=cycle_id;
@@ -122,11 +119,7 @@ Bool_t TaDitAna::LoadModulationData(TaInput *aInput){
 
   } // end of Good Events loop
   supercycle_buff.CalcSensitivities();
-  supercycle_buff.WriteToPrinter(fPrinter);
   fSuperCycleArray.push_back(supercycle_buff);
-  fPrinter->PrintToFile();
-  fPrinter->Print(std::cout);
-  fPrinter->Close();
   return kTRUE;
 }
 
@@ -241,38 +234,49 @@ void TaDitAna::RegisterBranchAddress(TTree *fTree){
   }
 }
 
+void TaDitAna::PrintSummary(TaOutput* aOutput){
+  TaPrinter *fPrinter = aOutput->GetPrinter();
+  auto iter=fSuperCycleArray.begin();
+  while(iter!=fSuperCycleArray.end()){
+    (*iter).WriteToPrinter(fPrinter);
+    iter++;
+  }
+  fPrinter->PrintToFile();
+  fPrinter->Print(std::cout);
+  fPrinter->Close();
+}
 void TaDitAna::WriteToTree(TaOutput* aOutput){
 #ifdef NOISY
   cout << __PRETTY_FUNCTION__<< endl;
 #endif
-  
+  auto iter=fSuperCycleArray.begin();
+
   Int_t nDV = fDependentVarArray.size();
   Int_t nCoil =7;
   vector<Double_t> fSens(nDV*nCoil);
   vector<Double_t> fSensErr(nDV*nCoil);
   vector<Double_t> fNSamps(nDV*nCoil);
-    for(int idv=0;idv<nDV;idv++){
+  for(int idv=0;idv<nDV;idv++){
     for(int ic=1;ic<=nCoil;ic++){
       TString dv_name = fDependentVarArray[idv]->GetName();
       TString coil_name = fCoilArray[ic-1]->GetName();
-      Int_t myIndex = protoCycle.GetIndex(make_pair(dv_name,coil_name));
+      Int_t myIndex = (*iter).GetIndex(make_pair(dv_name,coil_name));
       TString chName;
       chName = Form("%s_coil%d",dv_name.Data(),ic);
       aOutput->ConstructTreeBranch("sens",chName,fSens[myIndex]);
-      chName = Form("%s_coil%d.err",dv_name.Data(),ic);
+      chName = Form("%s_coil%d_err",dv_name.Data(),ic);
       aOutput->ConstructTreeBranch("sens",chName,fSensErr[myIndex]);
-      chName = Form("%s_coil%d.nsamp",dv_name.Data(),ic);
+      chName = Form("%s_coil%d_nsamp",dv_name.Data(),ic);
       aOutput->ConstructTreeBranch("sens",chName,fNSamps[myIndex]);
     }
   }
   Double_t cycID;
   aOutput->ConstructTreeBranch("sens","cycID",cycID);
-  auto iter=fSuperCycleArray.begin();
+  Double_t run_number = aOutput->GetRunNumber();
+  aOutput->ConstructTreeBranch("sens","run",run_number);
+
   while(iter!=fSuperCycleArray.end()){
     cycID =(Double_t) (*iter).GetCycleID();
-    cout << "Writing cycID:" << cycID << endl;
-    cout << nDV*nCoil << endl;
-    cout << (*iter).GetSize() << endl;
     for(int i=0;i<nDV*nCoil;i++){
       fSens[i] = (*iter).GetSensitivity(i);
       fSensErr[i] = (*iter).GetErrorBar(i);
@@ -282,4 +286,15 @@ void TaDitAna::WriteToTree(TaOutput* aOutput){
     iter++;
   }
 
+  // Write to slopes Tree
+  Int_t nTree = templateCycle.GetNumberOfSlopeMode();
+  for(int itree=0;itree<nTree;itree++){
+    vector<Double_t> fBranchValues;
+    auto iter_cyc = fSuperCycleArray.begin();
+    (*iter_cyc).ConstructSlopeTreeBranch(aOutput,itree,fBranchValues);
+    while(iter_cyc!=fSuperCycleArray.end()){
+      (*iter_cyc).FillSlopeTree(aOutput,itree,fBranchValues);
+      iter_cyc++;
+    }
+  }
 }
