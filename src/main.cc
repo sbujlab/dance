@@ -9,8 +9,6 @@ Dithering Analysis and Correction Engine
 #include "TaConfig.hh"
 #include "VAnalysisModule.hh"
 #include "TaRegression.hh"
-// #include "TaAnalysis.hh"
-// #include "TaDithering.hh"
 
 #include "TStopwatch.h"
 #include "TString.h"
@@ -85,7 +83,7 @@ int main(int argc, char** argv){
   fOutput->Close();
   fInput->Close();  
 
-  cout <<" -- " ;
+  cout <<" -- Done in " ;
   tsw.Print();
   return 0;
 }

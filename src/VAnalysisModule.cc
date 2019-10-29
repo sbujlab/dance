@@ -5,14 +5,14 @@ VAnalysisModule::VAnalysisModule(){
   
 }
 
-void VAnalysisModule::Init(TString type, TString name,TaConfig *aConfig){
-  Int_t ana_index = aConfig->GetAnalysisIndex(type,name);
+void VAnalysisModule::Init(Int_t ana_index,TaConfig *aConfig){
+
   tree_name = aConfig->GetAnalysisParameter(ana_index,"tree_name");
   branch_prefix = aConfig->GetAnalysisParameter(ana_index,"branch_prefix");
   sDVlist = aConfig->GetDVlist();
-  sIVlist = aConfig->GetIVlist(type,name);
+  sIVlist = aConfig->GetIVlist(ana_index);
   Int_t nDV = sDVlist.size();
-  vector<Double_t> subtraction{1,-1};
+
   for(int ich=0;ich<nDV;ich++){
     TaChannel *aOutputChannel = new TaChannel(tree_name,branch_prefix+sDVlist[ich]);
     TaChannel *aCorrection = new TaChannel(tree_name,"cor_"+sDVlist[ich]);

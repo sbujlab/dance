@@ -5,12 +5,11 @@
 #include "TStopwatch.h"
 ClassImp(TaRegression);
 
-TaRegression::TaRegression(TString type, TString name, TaConfig *fConfig){
+TaRegression::TaRegression(Int_t ana_index, TaConfig *fConfig){
 #ifdef NOISY
   cout << __PRETTY_FUNCTION__ << endl;
 #endif
-
-  Init(type,name,fConfig);
+  Init(ana_index,fConfig);
 }
 
 void TaRegression::Process(TaOutput *fOutput){

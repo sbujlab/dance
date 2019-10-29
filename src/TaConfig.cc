@@ -30,15 +30,15 @@ Bool_t TaConfig::ParseFile(TString fileName){
   Int_t index_ana = 0;
   Int_t channel_count=0;
   while(sline.ReadLine(configFile) ){
-    if(sline.Contains(comment))
+    if(sline.Contains(comment)) // FIXME
       continue;
 
     if(sline.Contains("[")){
       isInModulde = kTRUE;
-      pair<TString,TString> aTypeName = GetAnalysisTypeName(sline);
-      fAnalysisTypeNames.push_back(aTypeName);
+      TString myType = ParseAnalysisType(sline);
+      fAnalysisTypeArray.push_back(myType);
       myIndex = index_ana++;
-      fAnalysisMap[aTypeName] = myIndex;
+      // fAnalysisMap[aTypeName] = myIndex;
       continue;
     }
 
@@ -133,8 +133,8 @@ Bool_t TaConfig::ParseFile(TString fileName){
       }else if(vecStr[0]=="coil"){
 	(fCoilMap[myIndex]).push_back(vecStr[1]);
       }else{
-	pair<Int_t,TString> thiskey=make_pair(myIndex,vecStr[0]);
-	fAnalysisParameters[thiskey]=vecStr[1];
+	pair<Int_t,TString> myKey=make_pair(myIndex,vecStr[0]);
+	fAnalysisParameters[myKey]=vecStr[1];
       }
     } // end of if it inside an module section
   } // end of line loop
@@ -155,33 +155,19 @@ vector<TString> TaConfig::ParseLine(TString sline, TString delim){
   return ret;
 }
 
-pair<TString,TString> TaConfig::GetAnalysisTypeName(TString sline){
+TString TaConfig::ParseAnalysisType(TString sline){
 #ifdef DEBUG
   cout << __PRETTY_FUNCTION__ << endl;
 #endif
-
   Ssiz_t start_pt=sline.First('[')+1;
-  Ssiz_t length = sline.First(':');
+  Ssiz_t length = sline.First(']');
   length = length-start_pt;
-  TString type = sline(start_pt,length);
-
-  TString name;
-  if(sline.Contains(':')){
-    start_pt = sline.First(':')+1;
-    length = sline.Last(']')-1;
-    length = length - start_pt+1;
-    name = sline(start_pt,length);
-  }
-  else
-    name="";
-
+  TString this_type = sline(start_pt,length);
 #ifdef DEBUG
-  cout << type << "\t " << name << endl;
+  cout << "Parsing type:" << this_type << endl;
 #endif
-
-  return make_pair(type,name);
+  return this_type;
 }
-
 
 // vector<TString> TaConfig::GetDVlist(TString type,TString name){
 //   pair<TString,TString> aTypeName = make_pair(type,name);
@@ -189,12 +175,9 @@ pair<TString,TString> TaConfig::GetAnalysisTypeName(TString sline){
 //   return fDVMap[myIndex];
 // }
 
-vector<TString> TaConfig::GetIVlist(TString type,TString name){
-  pair<TString,TString> aTypeName = make_pair(type,name);
-  Int_t myIndex = fAnalysisMap[aTypeName];
-  return fIVMap[myIndex];
+vector<TString> TaConfig::GetIVlist(Int_t ana_index){
+  return fIVMap[ana_index];
 }
-
 
 TString TaConfig::GetConfigParameter(TString key){
   return fConfigParameters[key];
@@ -204,20 +187,15 @@ TString TaConfig::GetAnalysisParameter(Int_t index, TString key){
   return fAnalysisParameters[make_pair(index,key)];
 }
 
-Int_t TaConfig::GetAnalysisIndex(TString type, TString name){
-  return fAnalysisMap[make_pair(type,name)];
-}
-
 vector<VAnalysisModule*> TaConfig::GetAnalysisArray(){
-  Int_t nMod = fAnalysisTypeNames.size();
+  Int_t nMod = fAnalysisTypeArray.size();
   vector<VAnalysisModule*> fAnalysisArray;
   for(int i=0; i<nMod;i++){
-    TString type = fAnalysisTypeNames[i].first;
-    TString name = fAnalysisTypeNames[i].second;
+    TString type = fAnalysisTypeArray[i];
     VAnalysisModule* anAnalysis;
     if(type=="regression"){
       cout << "type == regression " << endl;
-      anAnalysis = new TaRegression(type,name,this);
+      anAnalysis = new TaRegression(i,this);
       fAnalysisArray.push_back(anAnalysis);
     }
   }
@@ -266,7 +244,7 @@ vector<TString> TaConfig::ParseChannelDefinition(TString input){
       TString elementName = extracted(aster_pos+1,form_length-(aster_pos+1));
       elements_array.push_back(elementName);
 #ifdef DEBUG
-  cout << elementName << endl;
+      cout << elementName << endl;
 #endif
     }else {
       extracted.ReplaceAll("+","");

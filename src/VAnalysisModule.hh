@@ -16,7 +16,7 @@ public:
   virtual void LoadInput(TaInput *aInput);
   virtual void Process(TaOutput *aOutput)=0;
   virtual void End(){};
-  void Init(TString type,TString name, TaConfig *aConfig);
+  void Init(Int_t index, TaConfig *aConfig);
   void ConstructOutputs(TaOutput *aOutput);
   void GetEntry(Int_t ievt);
   void CalcCombination();

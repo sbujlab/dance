@@ -24,10 +24,9 @@ public:
   Bool_t ParseFile(TString fileName);
 
   inline vector<TString> GetDVlist() const { return fDVlist;};
-  vector<TString> GetIVlist(TString type, TString name);
+  vector<TString> GetIVlist(Int_t ana_index);
   TString GetConfigParameter(TString key);
   TString GetAnalysisParameter(Int_t index, TString key);
-  Int_t GetAnalysisIndex(TString type, TString name);
   
   inline vector<TString> GetDependentVarArray() const { return fDependentVarArray;};
   inline vector<TString> GetDetectorList() const { return fDetectorArray;};
@@ -56,11 +55,11 @@ private:
   map< Int_t , vector<TString> > fIVMap;
   map<TString,Int_t> device_map;
   vector<TString> device_list;
-  vector< pair<TString, TString> > fAnalysisTypeNames;
-  map< pair<TString, TString>, Int_t > fAnalysisMap;
+  vector< TString > fAnalysisTypeArray;
+  // map< pair<TString, TString>, Int_t > fAnalysisMap;
 
   vector<TString>  ParseLine(TString, TString);
-  pair<TString,TString> GetAnalysisTypeName(TString);
+  TString ParseAnalysisType(TString);
 
   // Beam Mod elements
   vector<TString> fDetectorArray;
