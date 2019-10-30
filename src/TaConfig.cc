@@ -1,5 +1,6 @@
 #include "TaConfig.hh"
 #include "TaRegression.hh"
+#include "TaLagrangian.hh"
 #include "VAnalysisModule.hh"
 
 ClassImp(TaConfig);
@@ -186,6 +187,11 @@ vector<VAnalysisModule*> TaConfig::GetAnalysisArray(){
     if(type=="regression"){
       cout << "type == regression " << endl;
       anAnalysis = new TaRegression(i,this);
+      fAnalysisArray.push_back(anAnalysis);
+    }
+    if(type=="lagrangian"){
+      cout << "type == lagrangian " << endl;
+      anAnalysis = new TaLagrangian(i,this);
       fAnalysisArray.push_back(anAnalysis);
     }
   }

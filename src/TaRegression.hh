@@ -15,7 +15,7 @@ using namespace std;
 
 class TaRegression: public VAnalysisModule{
 public:
-
+  TaRegression(){};
   TaRegression(Int_t ana_index, TaConfig *aConfig);
   virtual ~TaRegression(){};
   void Process(TaOutput* fOutput);
