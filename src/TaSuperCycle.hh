@@ -69,10 +69,10 @@ private:
 
   map< pair<TString, TString>, Int_t > fSensitivityMap;
   map< TString, Int_t> fDVIndexMapByName;
+
   // for slopes calculation
   vector<vector<TString> >  fcoil_list;
   vector<vector<TString> > fmonitor_list;
-  vector<TString> kScheme;
   vector<TMatrixD> fSolutionArray;
   vector<Bool_t> isGoodSlopes;
   vector<TString> slope_tree_name;

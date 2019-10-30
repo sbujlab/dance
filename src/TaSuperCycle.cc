@@ -38,7 +38,6 @@ void TaSuperCycle::ConfigSlopesCalculation(TaConfig *fConfig){
   while(iter_anatype!=fAnalysisTypeArray.end()){
     if((*iter_anatype)=="slope"){
       Int_t ana_index = iter_anatype-fAnalysisTypeArray.begin();
-      kScheme.push_back(fConfig->GetAnalysisParameter(ana_index,"scheme"));
       fcoil_list.push_back(fConfig->GetCoilList(ana_index));
       fmonitor_list.push_back(fConfig->GetMonitorList(ana_index));
       slope_tree_name.push_back(fConfig->GetAnalysisParameter(ana_index,"tree_name"));
@@ -48,7 +47,7 @@ void TaSuperCycle::ConfigSlopesCalculation(TaConfig *fConfig){
 }
 
 void TaSuperCycle::CalcSlopes(){
-  Int_t nMod = kScheme.size();
+  Int_t nMod = slope_tree_name.size();
   for(int imod =0;imod<nMod;imod++){
     TMatrixD mrhs, mlhs;
     Bool_t kComplete1 = MakeMatrixFromList( fmonitor_list[imod],fcoil_list[imod], mrhs );
@@ -91,7 +90,7 @@ Bool_t TaSuperCycle::GetMatrixSolution(TMatrixD lhs, TMatrixD rhs,
   TMatrixD mXT = rhs.T();
   TMatrixD mXsq = mX*mXT;
   TDecompLU lu(mXsq);
-  if(!lu.Decompose()){
+  if(!lu.Decompose()){  // FIXME
     cout << "LU Decomposition failed, rhs matrix may be singular" << endl;
     cout << "Fail to solve and Zero out solution" << endl;
 #ifdef DEBUG  
@@ -231,7 +230,7 @@ void TaSuperCycle::WriteToPrinter(TaPrinter* aPrinter){
 }
 
 void TaSuperCycle::FillSlopes(){
-  Int_t nMode = kScheme.size();
+  Int_t nMode = slope_tree_name.size();
   for(int imod=0;imod<nMode;imod++){
     vector< pair<TString, TString> > fDMPairArray;
     vector< Double_t > fSlopeVector;
