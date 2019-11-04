@@ -65,21 +65,15 @@ int main(int argc, char** argv){
   TaOutput *fOutput = new TaOutput(fConfig); 
 
   TaDitAna *fDithering = new TaDitAna(fConfig);
-  fDithering->LoadModulationData(fInput);
-  fDithering->PrintSummary(fOutput);
-  fDithering->WriteToTree(fOutput);
-  // fDithering->ComputeSensitivities();
-  
+  if(fDithering->LoadModulationData(fInput)){
+    fDithering->Process();
+    fDithering->PrintSummary(fOutput);
+    fDithering->WriteToTree(fOutput);
+  }
+
   fOutput->Write();
   fOutput->Close();
-  // vector<TString> det_array = fConfig->GetDetArray();
-  // vector<TString> mon_array = fConfig->GetMonArray();
-  // vector<TString> coil_array = fConfig->GetCoilArray();
-  // output_rootfile->WriteObject(&det_array,"det_array");
-  // output_rootfile->WriteObject(&mon_array,"mon_array");
-  // output_rootfile->WriteObject(&coil_array,"coil_array");
-  // output_rootfile->Close();
-
+  
   cout <<" -- " ;
   tsw.Print();
   return 0;

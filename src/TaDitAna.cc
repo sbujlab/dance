@@ -91,7 +91,6 @@ Bool_t TaDitAna::LoadModulationData(TaInput *aInput){
       continue;
     if(cycle_id >last_cycle_id){
       if(last_cycle_id!=0){
-	supercycle_buff.CalcSensitivities();
       	fSuperCycleArray.push_back(supercycle_buff);
       }
 
@@ -118,11 +117,18 @@ Bool_t TaDitAna::LoadModulationData(TaInput *aInput){
       supercycle_buff.UpdateSamples(cur_index);
 
   } // end of Good Events loop
-  supercycle_buff.CalcSensitivities();
   fSuperCycleArray.push_back(supercycle_buff);
   return kTRUE;
 }
-
+void TaDitAna::Process(){
+  auto iter = fSuperCycleArray.begin();
+  while(iter!=fSuperCycleArray.end()){
+    (*iter).CalcSensitivities();
+    (*iter).CalcSlopes();
+    (*iter).FillSlopes();
+    iter++;
+  }
+}
 void TaDitAna::ProcessDefinitions(vector<pair<TString,TString> > fDefinitions){
 #ifdef NOISY
   cout << __PRETTY_FUNCTION__ << endl;

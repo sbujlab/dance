@@ -19,7 +19,7 @@ public:
   ~TaDitAna(){};
 
   Bool_t LoadModulationData(TaInput *aInput);
-  // Bool_t CalcSensitivities();
+  void Process();
   void WriteToTree(TaOutput* aOutput);
   void PrintSummary(TaOutput* aOutput);
 

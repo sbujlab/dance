@@ -89,23 +89,14 @@ Bool_t TaSuperCycle::GetMatrixSolution(TMatrixD lhs, TMatrixD rhs,
   TMatrixD mX(rhs);
   TMatrixD mXT = rhs.T();
   TMatrixD mXsq = mX*mXT;
-  TDecompLU lu(mXsq);
-  if(!lu.Decompose()){  // FIXME
-    cout << "LU Decomposition failed, rhs matrix may be singular" << endl;
-    cout << "Fail to solve and Zero out solution" << endl;
-#ifdef DEBUG  
-    mXsq.Print();
-#endif
-    sol.Zero();
-    isGood = kFALSE;
-  }else{
-    TMatrixD inv = (mXsq).Invert();
-    sol = lhs*mXT*inv;
+
+  TMatrixD inv = (mXsq).Invert();
+  // FIXME : Check singularity
+  sol = lhs*mXT*inv;
 #ifdef NOISY  
-    sol.Print();
+  sol.Print();
 #endif
-    isGood = kTRUE;
-  }
+  isGood = kTRUE;
   return isGood;
 }
 void TaSuperCycle::InitAccumulators(){
@@ -172,37 +163,8 @@ void TaSuperCycle::CalcSensitivities(){
       }
     } // end of coil loop
   } // end of dependent variables loop
-  CalcSlopes();
-  FillSlopes();
 }
 
-void TaSuperCycle::PrintSensitivities(){
-  cout << "-- cycle ID : " << cycID << endl;
-  cout << "-- Coil # : " ;
-  for(int ic=1;ic<=7;ic++)
-    cout << ic << "\t";
-  cout << endl;
-  cout << "-- nSamples : " ;
-  for(int ic=0;ic<7;ic++)
-    cout << fCoilVarianceArray[ic].GetN() << "\t";
-  cout << endl;  
-  for(int idv=0;idv<nDependentVar;idv++){
-    Double_t scale = 1;
-    if(isDetectorFlag[idv])
-      scale = 1e6;
-    else
-      scale = 1e3;
-    TString dv_name = fDependentVarArray[idv]->GetName();
-    cout << dv_name << ":";
-    for(int ic=1;ic<=7;ic++){
-      Int_t index = fSensitivityMap[make_pair(dv_name,Form("bmod_trim%d",ic))];
-      cout <<fSensitivity[index]*scale
-	   <<" +/- "
-	   << fSensitivity_err[index]*scale << "\t" ;
-    }
-    cout << endl;
-  }
-}
 
 void TaSuperCycle::WriteToPrinter(TaPrinter* aPrinter){
   aPrinter->InsertHorizontalLine();
