@@ -7,6 +7,9 @@
 
 ClassImp(TaSuperCycle);
 using namespace std;
+TaSuperCycle::TaSuperCycle(){
+  kDeviceErrorCut = kFALSE;
+}
 void TaSuperCycle::LoadDetectorList(vector<TString> input){
   fDetectorList = input;
 }
@@ -50,13 +53,13 @@ void TaSuperCycle::CalcSlopes(){
   Int_t nMod = slope_tree_name.size();
   for(int imod =0;imod<nMod;imod++){
     TMatrixD mrhs, mlhs;
-    Bool_t kComplete1 = MakeMatrixFromList( fmonitor_list[imod],fcoil_list[imod], mrhs );
-    Bool_t kComplete2 = MakeMatrixFromList( fDetectorList, fcoil_list[imod], mlhs );
-    Bool_t isGood=kFALSE;
+    Bool_t kComplete = MakeMatrixFromList( fmonitor_list[imod],fcoil_list[imod], mrhs );
+    MakeMatrixFromList( fDetectorList, fcoil_list[imod], mlhs );
+    vector< Bool_t > isGood;
     TMatrixD sol(fDetectorList.size(), fmonitor_list[imod].size());
-    if(kComplete2 && kComplete1)
+    if(kComplete)
       isGood = GetMatrixSolution( mlhs , mrhs, sol);
-    isGoodSlopes.push_back(isGood);
+    fSlopeFlagArray.push_back(isGood);
     fSolutionArray.push_back(sol);
   }
 }
@@ -73,19 +76,32 @@ Bool_t TaSuperCycle::MakeMatrixFromList(vector<TString> row_list,
       Int_t sens_index = fSensitivityMap[make_pair(row_list[irow],col_list[icol])];
       if(fSensitivity_err[sens_index]>0)
 	input(irow,icol) = fSensitivity[sens_index];
-      else
-	return kFALSE;
+      else{
+	input(irow,icol) = 0.0;
+	isComplete = kFALSE;
+      }
     }
   }
   return isComplete;
 }
 
-Bool_t TaSuperCycle::GetMatrixSolution(TMatrixD lhs, TMatrixD rhs,
+vector<Bool_t> TaSuperCycle::GetMatrixSolution(TMatrixD lhs, TMatrixD rhs,
 				       TMatrixD &sol){
 #ifdef NOISY
   cout << __PRETTY_FUNCTION__<< endl;
 #endif
-  Bool_t isGood;
+  Int_t nFlag=fDetectorList.size();
+  vector<Bool_t> isGood(nFlag,kTRUE);
+  Int_t lhs_nrow = lhs.GetNrows();
+  Int_t lhs_ncol = lhs.GetNcols();
+  for(int irow=0;irow<lhs_nrow;irow++){
+    for(int icol=0;icol<lhs_ncol;icol++){
+      if(lhs[irow][icol]==0.0){
+	isGood[irow]=kFALSE;
+	break;
+      }
+    }
+  }
   TMatrixD mX(rhs);
   TMatrixD mXT = rhs.T();
   TMatrixD mXsq = mX*mXT;
@@ -96,27 +112,35 @@ Bool_t TaSuperCycle::GetMatrixSolution(TMatrixD lhs, TMatrixD rhs,
 #ifdef NOISY  
   sol.Print();
 #endif
-  isGood = kTRUE;
   return isGood;
 }
 void TaSuperCycle::InitAccumulators(){
 #ifdef NOISY
   cout << __PRETTY_FUNCTION__ << endl;
 #endif
-  fCoilVarianceArray.resize(nCoil);
-  fCovarianceArray.resize(nDependentVar,fCoilVarianceArray);
-  fDepVarianceArray.resize(nDependentVar,fCoilVarianceArray);
+  vector<TaAccumulator> fDummy(nCoil);
+  fCoilVarianceArray.resize(nDependentVar,fDummy);
+  fCovarianceArray.resize(nDependentVar,fDummy);
+  fDepVarianceArray.resize(nDependentVar,fDummy);
 }
 
 void TaSuperCycle::UpdateSamples(Int_t cur_index){
 
-  fCoilVarianceArray[cur_index].Update(fCoilArray[cur_index]->GetHwSum() );
-  for(int idv=0;idv<nDependentVar;idv++)
-    fDepVarianceArray[idv][cur_index].Update( fDependentVarArray[idv]->GetHwSum() );
+  for(int idv=0;idv<nDependentVar;idv++){
 
-  for(int idv=0;idv<nDependentVar;idv++)
-    fCovarianceArray[idv][cur_index].Update( fDependentVarArray[idv]->GetHwSum(),
+    if(kDeviceErrorCut &&
+       ( fDependentVarArray[idv]->GetDeviceErrorCode()
+	 || fCoilArray[cur_index]->GetDeviceErrorCode() ))
+      continue;
+    
+    fDepVarianceArray[idv][cur_index].Update(fDependentVarArray[idv]->GetHwSum() );
+
+    fCoilVarianceArray[idv][cur_index].Update(fCoilArray[cur_index]->GetHwSum() );
+
+    fCovarianceArray[idv][cur_index].Update(fDependentVarArray[idv]->GetHwSum(),
 					     fCoilArray[cur_index]->GetHwSum());
+
+  }
 
 }
 void TaSuperCycle::CalcSensitivities(){
@@ -131,13 +155,13 @@ void TaSuperCycle::CalcSensitivities(){
       fSensitivityMap[make_pair(dv_name,coil_name)] = icount++;
       fSamples.push_back(fCovarianceArray[idv][icoil].GetN());
       if(fCovarianceArray[idv][icoil].GetN()<=50 ||
-	 fCoilVarianceArray[icoil].GetM2()/fCoilVarianceArray[icoil].GetN()<10 ){
+	 fCoilVarianceArray[idv][icoil].GetM2()/fCoilVarianceArray[idv][icoil].GetN()<10 ){
 	fSensitivity.push_back(0.0);
 	fSensitivity_err.push_back(-1.0);
 	continue;
       }
       double numerator= fCovarianceArray[idv][icoil].GetM2();
-      double denominator = fCoilVarianceArray[icoil].GetM2();
+      double denominator = fCoilVarianceArray[idv][icoil].GetM2();
       double mySensitiviy =  numerator/denominator;
       if(isDetectorFlag[idv]){
 	double detector_norm = fDepVarianceArray[idv][icoil].GetMean1();
@@ -146,18 +170,18 @@ void TaSuperCycle::CalcSensitivities(){
 	  fSensitivity_err.push_back(-1.0);
 	}else{
 	  mySensitiviy /= detector_norm;
-	  Double_t a = fDepVarianceArray[idv][icoil].GetM2()- TMath::Power(fCovarianceArray[idv][icoil].GetM2(),2)/fCoilVarianceArray[icoil].GetM2();
-	  Double_t b = fCoilVarianceArray[icoil].GetM2();
-	  Double_t myError = TMath::Sqrt((a/b)/(fCoilVarianceArray[icoil].GetN()-2));
+	  Double_t a = fDepVarianceArray[idv][icoil].GetM2()- TMath::Power(fCovarianceArray[idv][icoil].GetM2(),2)/fCoilVarianceArray[idv][icoil].GetM2();
+	  Double_t b = fCoilVarianceArray[idv][icoil].GetM2();
+	  Double_t myError = TMath::Sqrt((a/b)/(fCoilVarianceArray[idv][icoil].GetN()-2));
 	  myError /= detector_norm;
 
 	  fSensitivity.push_back(mySensitiviy);
 	  fSensitivity_err.push_back(myError);
 	}
       } else{
-	Double_t a = fDepVarianceArray[idv][icoil].GetM2()- TMath::Power(fCovarianceArray[idv][icoil].GetM2(),2)/fCoilVarianceArray[icoil].GetM2();
-	Double_t b = fCoilVarianceArray[icoil].GetM2();
-	Double_t myError = TMath::Sqrt((a/b)/(fCoilVarianceArray[icoil].GetN()-2));
+	Double_t a = fDepVarianceArray[idv][icoil].GetM2()- TMath::Power(fCovarianceArray[idv][icoil].GetM2(),2)/fCoilVarianceArray[idv][icoil].GetM2();
+	Double_t b = fCoilVarianceArray[idv][icoil].GetM2();
+	Double_t myError = TMath::Sqrt((a/b)/(fCoilVarianceArray[idv][icoil].GetN()-2));
 	fSensitivity.push_back(mySensitiviy);
 	fSensitivity_err.push_back(myError);
       }
@@ -218,6 +242,7 @@ void TaSuperCycle::FillSlopes(){
 
 void TaSuperCycle::ConstructSlopeTreeBranch(TaOutput *aOutput,Int_t index,
 					    vector<Double_t> &fBranchValues){
+  //FIXME, add slope Flag ..
   Int_t ndim = fSlopes[index].size();
   fBranchValues.resize(ndim,0);
   

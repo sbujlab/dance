@@ -18,9 +18,10 @@ using namespace std;
 
 class TaSuperCycle: public TObject{
 public:
-  TaSuperCycle(){};
+  TaSuperCycle();
   virtual ~TaSuperCycle(){};
 
+  void EnableDeviceErrorCut(){ kDeviceErrorCut=kTRUE;};
   void RegisterDependentVarArray(vector<TaDataElement*>);
   void LoadDetectorList( vector<TString> );
   void RegisterCoilArray(vector<TaDataElement*>);
@@ -36,7 +37,7 @@ public:
 
   void CalcSlopes(); 
   Bool_t MakeMatrixFromList(vector<TString>, vector<TString>, TMatrixD&);
-  Bool_t GetMatrixSolution(TMatrixD lhs, TMatrixD rhs, TMatrixD &sol);
+  vector<Bool_t> GetMatrixSolution(TMatrixD lhs, TMatrixD rhs, TMatrixD &sol);
   
   inline void SetCycleID(Int_t id){ cycID = id;};
   inline Int_t GetCycleID(){ return cycID;};
@@ -51,6 +52,7 @@ public:
 
 private:
   Int_t cycID;
+  Bool_t kDeviceErrorCut;
   Int_t nDependentVar;
   Int_t nCoil;
   vector<TString> fDetectorList;
@@ -61,7 +63,7 @@ private:
 
   vector< vector<TaAccumulator> > fCovarianceArray; 
   vector< vector<TaAccumulator> > fDepVarianceArray;
-  vector<TaAccumulator> fCoilVarianceArray;
+  vector< vector<TaAccumulator> >  fCoilVarianceArray;
 
   vector<Double_t> fSamples;
   vector<Double_t> fSensitivity;
@@ -74,7 +76,7 @@ private:
   vector<vector<TString> >  fcoil_list;
   vector<vector<TString> > fmonitor_list;
   vector<TMatrixD> fSolutionArray;
-  vector<Bool_t> isGoodSlopes;
+  vector< vector<Bool_t> > fSlopeFlagArray;
   vector<TString> slope_tree_name;
 
   vector< vector<Double_t> >  fSlopes;

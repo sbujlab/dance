@@ -33,6 +33,9 @@ TaDitAna::TaDitAna(TaConfig* aConfig){
   templateCycle.InitAccumulators();
   templateCycle.ConfigSlopesCalculation(aConfig);
 
+  if(aConfig->GetConfigParameter("device_error_cut")=="on")
+    templateCycle.EnableDeviceErrorCut();
+
   if(fDependentVarArray.size()==0){
     cerr << " Error: Empty Dependent Channel Array " << endl;
   }
