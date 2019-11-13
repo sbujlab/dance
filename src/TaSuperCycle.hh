@@ -37,7 +37,8 @@ public:
 
   void CalcSlopes(); 
   Bool_t MakeMatrixFromList(vector<TString>, vector<TString>, TMatrixD&);
-  vector<Bool_t> GetMatrixSolution(TMatrixD lhs, TMatrixD rhs, TMatrixD &sol);
+  Bool_t MakeMatrixByName(TString, vector<TString>, TMatrixD&);
+  Bool_t GetMatrixSolution(TMatrixD lhs, TMatrixD rhs, TMatrixD &sol);
   
   inline void SetCycleID(Int_t id){ cycID = id;};
   inline Int_t GetCycleID(){ return cycID;};
@@ -75,23 +76,24 @@ private:
   // for slopes calculation
   vector<vector<TString> >  fcoil_list;
   vector<vector<TString> > fmonitor_list;
-  vector<TMatrixD> fSolutionArray;
-  vector< vector<Bool_t> > fSlopeFlagArray;
+
   vector<TString> slope_tree_name;
 
-  vector< vector<Double_t> >  fSlopes;
-  vector< vector<pair<TString,TString> > > fDetMonPairArray;
-
+  vector< vector<Double_t> >  fSlopeContainer;
+  vector< vector<Double_t> > fFlagContainer;
+  vector< vector<pair<TString,TString> > > fKeyContainer;
+  
 public:
-
+  inline TString GetTreeName(Int_t index){return slope_tree_name[index];};
   Int_t GetNumberOfSlopeMode(){return slope_tree_name.size();};
-  void FillSlopes();
   void ConstructSlopeTreeBranch(TaOutput *aOuput, 
 				Int_t ana_index,
-				vector<Double_t> &fBranchValues);
+				vector<Double_t> &fBranchValues,
+				vector<Double_t> &fFlagValues);
   void FillSlopeTree(TaOutput *aOuput,
 		     Int_t ana_index, 
-		     vector<Double_t> &fBranchValues);
+		     vector<Double_t> &fBranchValues,
+		     vector<Double_t> &fFlagValues);
 
   ClassDef(TaSuperCycle,0);
 };

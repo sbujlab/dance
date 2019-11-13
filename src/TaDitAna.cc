@@ -128,7 +128,6 @@ void TaDitAna::Process(){
   while(iter!=fSuperCycleArray.end()){
     (*iter).CalcSensitivities();
     (*iter).CalcSlopes();
-    (*iter).FillSlopes();
     iter++;
   }
 }
@@ -296,13 +295,23 @@ void TaDitAna::WriteToTree(TaOutput* aOutput){
   }
 
   // Write to slopes Tree
-  Int_t nTree = templateCycle.GetNumberOfSlopeMode();
-  for(int itree=0;itree<nTree;itree++){
+  Int_t nMod = templateCycle.GetNumberOfSlopeMode();
+  for(int imod=0;imod<nMod;imod++){
+    TString mod_name = templateCycle.GetTreeName(imod);
+    Double_t cycID;
+    aOutput->ConstructTreeBranch(mod_name,"cycID",cycID);
+    Double_t run_number = aOutput->GetRunNumber();
+    aOutput->ConstructTreeBranch(mod_name,"run",run_number);
+
     vector<Double_t> fBranchValues;
+    vector<Double_t> fFlagValues;
     auto iter_cyc = fSuperCycleArray.begin();
-    (*iter_cyc).ConstructSlopeTreeBranch(aOutput,itree,fBranchValues);
+    (*iter_cyc).ConstructSlopeTreeBranch(aOutput,imod,
+					 fBranchValues,fFlagValues);
     while(iter_cyc!=fSuperCycleArray.end()){
-      (*iter_cyc).FillSlopeTree(aOutput,itree,fBranchValues);
+      cycID = (*iter_cyc).GetCycleID();
+      (*iter_cyc).FillSlopeTree(aOutput,imod,
+				fBranchValues,fFlagValues);
       iter_cyc++;
     }
   }

@@ -51,17 +51,53 @@ void TaSuperCycle::ConfigSlopesCalculation(TaConfig *fConfig){
 
 void TaSuperCycle::CalcSlopes(){
   Int_t nMod = slope_tree_name.size();
-  for(int imod =0;imod<nMod;imod++){
-    TMatrixD mrhs, mlhs;
+  for(int imod=0;imod<nMod;imod++){
+    TMatrixD mrhs;
     Bool_t kComplete = MakeMatrixFromList( fmonitor_list[imod],fcoil_list[imod], mrhs );
-    MakeMatrixFromList( fDetectorList, fcoil_list[imod], mlhs );
-    vector< Bool_t > isGood;
-    TMatrixD sol(fDetectorList.size(), fmonitor_list[imod].size());
-    if(kComplete)
-      isGood = GetMatrixSolution( mlhs , mrhs, sol);
-    fSlopeFlagArray.push_back(isGood);
-    fSolutionArray.push_back(sol);
+    auto iter_det = fDetectorList.begin();
+    vector<Double_t> fSlopeVector;
+    vector<Double_t> fFlagVector;
+    vector<pair<TString,TString> > fKeyVector;
+    while(iter_det!=fDetectorList.end()){
+      TMatrixD mlhs;
+      Bool_t kComplete_det=MakeMatrixByName( *iter_det, fcoil_list[imod], mlhs );
+      Int_t nMon = fmonitor_list[imod].size();
+      TMatrixD sol(1, nMon);
+      Bool_t isGood = kFALSE;
+      if(kComplete && kComplete_det)
+	isGood = GetMatrixSolution( mlhs , mrhs, sol);
+      
+      for(int imon=0;imon<nMon;imon++){
+	fSlopeVector.push_back(sol[0][imon]);
+	fFlagVector.push_back((Double_t)isGood);
+	fKeyVector.push_back(make_pair(*iter_det,fmonitor_list[imod][imon]));
+      }
+      iter_det++;
+    } // end of detector loop
+    fSlopeContainer.push_back(fSlopeVector);
+    fFlagContainer.push_back(fFlagVector);
+    fKeyContainer.push_back(fKeyVector);
+  } // Slope Modes loops
+}
+
+Bool_t TaSuperCycle::MakeMatrixByName(TString channel_in_row,
+				      vector<TString> col_list,
+				      TMatrixD &input){
+  Bool_t isComplete = kTRUE;
+  Int_t nrow = 1;
+  Int_t ncol = col_list.size();
+  input.ResizeTo(nrow,ncol);
+
+  for(int icol=0;icol<ncol;icol++){
+    Int_t sens_index = fSensitivityMap[make_pair(channel_in_row,col_list[icol])];
+    if(fSensitivity_err[sens_index]>0)
+      input(0,icol) = fSensitivity[sens_index];
+    else{
+      input(0,icol) = 0.0;
+      isComplete = kFALSE;
+    }
   }
+  return isComplete;
 }
 
 Bool_t TaSuperCycle::MakeMatrixFromList(vector<TString> row_list,
@@ -85,31 +121,23 @@ Bool_t TaSuperCycle::MakeMatrixFromList(vector<TString> row_list,
   return isComplete;
 }
 
-vector<Bool_t> TaSuperCycle::GetMatrixSolution(TMatrixD lhs, TMatrixD rhs,
+Bool_t TaSuperCycle::GetMatrixSolution(TMatrixD lhs, TMatrixD rhs,
 				       TMatrixD &sol){
 #ifdef NOISY
   cout << __PRETTY_FUNCTION__<< endl;
 #endif
-  Int_t nFlag=fDetectorList.size();
-  vector<Bool_t> isGood(nFlag,kTRUE);
-  Int_t lhs_nrow = lhs.GetNrows();
-  Int_t lhs_ncol = lhs.GetNcols();
-  for(int irow=0;irow<lhs_nrow;irow++){
-    for(int icol=0;icol<lhs_ncol;icol++){
-      if(lhs[irow][icol]==0.0){
-	isGood[irow]=kFALSE;
-	break;
-      }
-    }
-  }
+  TString isGood = kTRUE;
+  //
+  // FIXME : Check singularity
+  //
+
   TMatrixD mX(rhs);
   TMatrixD mXT = rhs.T();
   TMatrixD mXsq = mX*mXT;
-
   TMatrixD inv = (mXsq).Invert();
-  // FIXME : Check singularity
+
   sol = lhs*mXT*inv;
-#ifdef NOISY  
+#ifdef DEBUG  
   sol.Print();
 #endif
   return isGood;
@@ -138,7 +166,7 @@ void TaSuperCycle::UpdateSamples(Int_t cur_index){
     fCoilVarianceArray[idv][cur_index].Update(fCoilArray[cur_index]->GetHwSum() );
 
     fCovarianceArray[idv][cur_index].Update(fDependentVarArray[idv]->GetHwSum(),
-					     fCoilArray[cur_index]->GetHwSum());
+					    fCoilArray[cur_index]->GetHwSum());
 
   }
 
@@ -215,50 +243,37 @@ void TaSuperCycle::WriteToPrinter(TaPrinter* aPrinter){
   aPrinter->InsertHorizontalLine();
 }
 
-void TaSuperCycle::FillSlopes(){
-  Int_t nMode = slope_tree_name.size();
-  for(int imod=0;imod<nMode;imod++){
-    vector< pair<TString, TString> > fDMPairArray;
-    vector< Double_t > fSlopeVector;
-    vector<TString> monitor_list = fmonitor_list[imod];
-    auto iter_mon = monitor_list.begin();
-    while(iter_mon!=monitor_list.end()){
-      Int_t imon  = iter_mon-monitor_list.begin();
-      Int_t myIndex = fDVIndexMapByName[*iter_mon];
-      TaDataElement* this_element = fDependentVarArray[ myIndex];
-      auto iter_det = fDetectorList.begin();
-      while(iter_det!=fDetectorList.end()){
-	Int_t idet = iter_det - fDetectorList.begin();
-	fDMPairArray.push_back(make_pair(*iter_det,*iter_mon));
-	fSlopeVector.push_back(fSolutionArray[imod](idet,imon));
-	iter_det++;
-      }
-      iter_mon++;
-    }
-    fSlopes.push_back(fSlopeVector);
-    fDetMonPairArray.push_back(fDMPairArray);
-  }
-}
-
 void TaSuperCycle::ConstructSlopeTreeBranch(TaOutput *aOutput,Int_t index,
-					    vector<Double_t> &fBranchValues){
-  //FIXME, add slope Flag ..
-  Int_t ndim = fSlopes[index].size();
-  fBranchValues.resize(ndim,0);
+					    vector<Double_t> &fBranchValues,
+					    vector<Double_t> &fFlagValues){
+  Int_t ndim = fSlopeContainer[index].size();
+  fBranchValues.resize(ndim,0.0);
+  fFlagValues.resize(ndim,0.0);
   
   for(int i=0;i<ndim;i++){
     TString branch_name = Form("%s_%s",
-			       (fDetMonPairArray[index][i].first).Data(),
-			       (fDetMonPairArray[index][i].second).Data());
+			       (fKeyContainer[index][i].first).Data(),
+			       (fKeyContainer[index][i].second).Data());
     aOutput->ConstructTreeBranch(slope_tree_name[index],branch_name,fBranchValues[i]);
+  }
+
+  for(int i=0;i<ndim;i++){
+    TString branch_name = Form("%s_%s_flag",
+			       (fKeyContainer[index][i].first).Data(),
+			       (fKeyContainer[index][i].second).Data());
+    aOutput->ConstructTreeBranch(slope_tree_name[index],branch_name,fFlagValues[i]);
   }
 }
 
 void TaSuperCycle::FillSlopeTree(TaOutput *aOutput,Int_t index,
-				 vector<Double_t> &fBranchValues){
-  Int_t ndim = fSlopes[index].size();
+				 vector<Double_t> &fBranchValues,
+				 vector<Double_t> &fFlagValues){
+
+  Int_t ndim = fSlopeContainer[index].size();
   for(int i=0;i<ndim;i++){
-    fBranchValues[i] = fSlopes[index][i];
+    fBranchValues[i] = fSlopeContainer[index][i];
+    fFlagValues[i] = fFlagContainer[index][i];
   }
   aOutput->FillTree(slope_tree_name[index]);
+
 }
