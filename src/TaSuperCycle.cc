@@ -126,22 +126,27 @@ Bool_t TaSuperCycle::GetMatrixSolution(TMatrixD lhs, TMatrixD rhs,
 #ifdef NOISY
   cout << __PRETTY_FUNCTION__<< endl;
 #endif
-  TString isGood = kTRUE;
-  //
-  // FIXME : Check singularity
-  //
+  TString isGood = kTRUE;   // FIXME : Test singular
 
-  TMatrixD mX(rhs);
-  TMatrixD mXT = rhs.T();
-  TMatrixD mXsq = mX*mXT;
-  TMatrixD inv = (mXsq).Invert();
+  Int_t nrow = rhs.GetNrows();
+  Int_t ncol = rhs.GetNcols();
+  if(nrow==ncol){
+    TMatrixD inv_rhs = rhs.Invert();
+    sol = lhs*inv_rhs;
+  }else{
+    TMatrixD mX(rhs);
+    TMatrixD mXT = rhs.T();
+    TMatrixD mXsq = mX*mXT;
+    TMatrixD inv = (mXsq).Invert();
+    sol = lhs*mXT*inv;
+  }
 
-  sol = lhs*mXT*inv;
 #ifdef DEBUG  
   sol.Print();
 #endif
   return isGood;
 }
+
 void TaSuperCycle::InitAccumulators(){
 #ifdef NOISY
   cout << __PRETTY_FUNCTION__ << endl;
