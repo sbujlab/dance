@@ -162,8 +162,8 @@ void TaSuperCycle::UpdateSamples(Int_t cur_index){
   for(int idv=0;idv<nDependentVar;idv++){
 
     if(kDeviceErrorCut &&
-       ( fDependentVarArray[idv]->GetDeviceErrorCode()
-	 || fCoilArray[cur_index]->GetDeviceErrorCode() ))
+       ( fDependentVarArray[idv]->TestDeviceErrorCode()
+	 || fCoilArray[cur_index]->TestDeviceErrorCode() ) )
       continue;
     
     fDepVarianceArray[idv][cur_index].Update(fDependentVarArray[idv]->GetHwSum() );
@@ -172,7 +172,6 @@ void TaSuperCycle::UpdateSamples(Int_t cur_index){
 
     fCovarianceArray[idv][cur_index].Update(fDependentVarArray[idv]->GetHwSum(),
 					    fCoilArray[cur_index]->GetHwSum());
-
   }
 
 }

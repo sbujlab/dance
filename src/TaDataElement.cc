@@ -35,6 +35,12 @@ Double_t TaDataElement::GetHwSum(){
   return fhw_sum;
 }
 
+Double_t TaDataElement::TestDeviceErrorCode(Int_t ErrorMask){
+  Int_t myDEC = (Int_t)GetDeviceErrorCode();
+  Double_t ret = (Double_t) ( myDEC&ErrorMask);
+  return ret;
+}
+
 Double_t TaDataElement::GetDeviceErrorCode(){
   Int_t nele = fElementArray.size();
   if(nele>=1){

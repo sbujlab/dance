@@ -18,6 +18,7 @@ public:
 
   void RegisterBranchAddress(TBranch*);
   Double_t GetHwSum();
+  Double_t TestDeviceErrorCode(Int_t ErrorMask=0xFF);
   Double_t GetDeviceErrorCode();
   void AddElement(Double_t, TaDataElement*);
   TString GetName(){return myName;};
