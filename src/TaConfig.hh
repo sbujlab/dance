@@ -24,6 +24,8 @@ public:
   Bool_t ParseFile(TString fileName);
 
   inline vector<TString> GetDVlist() const { return fDVlist;};
+  inline vector<TString> GetRawDVlist() const { return fRawDVlist;};
+  inline map<TString, vector<pair<Double_t,TString> > >  GetChannelDefintion(){ return fChannelDefinition;};
   inline vector<TString> GetIVlist(Int_t ana_index) { return fIVMap[ana_index];};
   TString GetConfigParameter(TString key);
   TString GetAnalysisParameter(Int_t index, TString key);
@@ -48,7 +50,7 @@ public:
   
   vector<VAnalysisModule*> GetAnalysisArray();
   vector<TString> ParseChannelDefinition(TString );
-  
+  void LoadDVChannel(TString);
 private:
 
   TString configName;
@@ -58,7 +60,10 @@ private:
   map<TString, TString> fConfigParameters;
   map< pair<Int_t,TString> , TString> fAnalysisParameters;
   vector<TString>  fDVlist;
-  map< Int_t , vector<TString> > fIVMap;
+  vector<TString>  fRawDVlist;
+  map<TString , vector<pair<Double_t,TString> > >  fChannelDefinition;
+
+  map< Int_t , vector<TString> > fIVMap; // key: AnaMod index 
   map<TString,Int_t> device_map;
   vector<TString> device_list;
   vector< TString > fAnalysisTypeArray;

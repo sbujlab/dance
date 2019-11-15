@@ -21,12 +21,16 @@ public:
   virtual ~TaLagrangian(){};
 
   void LoadConstraint(Int_t, TaConfig*);
-  TMatrixD Solve(TMatrixD CovDM, TMatrixD CovMM);
+  vector< vector<Double_t> > Solve(TMatrixD CovDM, TMatrixD CovMM);
+  TMatrixD GetDetMonCovMatrix(Int_t mini);
   TString GetBaseName(TString);
 private:
   Int_t nCoil;
   TMatrixD detConstraints;
   TMatrixD monConstraints;
+  map<TString, vector< pair<Double_t,TString> > > fChannelDefinition;
+  vector<TString> fRawDVlist;
+  Int_t FindRawDVIndexFromList(TString raw_namae);
 
   ClassDef(TaLagrangian,0);
 };

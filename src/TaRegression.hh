@@ -19,10 +19,10 @@ public:
   TaRegression(Int_t ana_index, TaConfig *aConfig);
   virtual ~TaRegression(){};
   void Process(TaOutput* fOutput);
-  TMatrixD Solve(TMatrixD, TMatrixD);
+  virtual vector<vector<Double_t> > Solve(TMatrixD, TMatrixD);
   void CorrectTree();
   void WriteSummary();
-  TMatrixD GetDetMonCovMatrix(Int_t imini);
+  virtual  TMatrixD GetDetMonCovMatrix(Int_t imini);
   TMatrixD GetMonMonCovMatrix(Int_t imini);
   Double_t GetCovariance(TaChannel*, TaChannel*,Int_t);
 

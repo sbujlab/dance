@@ -24,10 +24,10 @@ void TaRegression::Process(TaOutput *fOutput){
   for(int imini=0; imini<nMini;imini++){
     TMatrixD CovDM = GetDetMonCovMatrix(imini);
     TMatrixD CovMM = GetMonMonCovMatrix(imini);
-    TMatrixD fSlopes = Solve(CovDM,CovMM);
+    vector<vector<Double_t> > fSlopes = Solve(CovDM,CovMM);
     
     for(int ich=0;ich<nDV;ich++){
-      vector<Double_t> fprefactors = GetColumnVector(fSlopes,ich);
+      vector<Double_t> fprefactors = fSlopes[ich];
       fCorrections[ich]->ConnectChannels(fIndependentVar,fprefactors);
     }
 
@@ -49,7 +49,7 @@ void TaRegression::Process(TaOutput *fOutput){
 }
 
 
-TMatrixD TaRegression::Solve(TMatrixD CovDM, TMatrixD CovMM){
+vector<vector<Double_t> > TaRegression::Solve(TMatrixD CovDM, TMatrixD CovMM){
 #ifdef NOISY
   cout << __FUNCTION__ << endl;
 #endif
@@ -63,7 +63,11 @@ TMatrixD TaRegression::Solve(TMatrixD CovDM, TMatrixD CovMM){
   cout << " -- Slopes Matrix (nMon x nDet) " << endl;
   solutionM.Print();
 #endif
-  return solutionM;
+  vector<vector<Double_t> >  fSlopesContainer;
+  Int_t ncol = solutionM.GetNcols();
+  for(Int_t icol=0;icol<ncol;icol++)
+    fSlopesContainer.push_back(GetColumnVector(solutionM,icol));
+  return fSlopesContainer;
 }
 
 

@@ -29,6 +29,7 @@ void VAnalysisModule::LoadInput(TaInput *aInput){
   for(int idv=0;idv<nDV;idv++){
     TaChannel *aChannel = aInput->GetChannel(sDVlist[idv]);
     fDependentVar.push_back(aChannel);
+    fDVMaps[sDVlist[idv]] = aChannel;
   }
 
   for(int ich=0;ich<nDV;ich++)
@@ -38,6 +39,7 @@ void VAnalysisModule::LoadInput(TaInput *aInput){
   for(int iiv=0;iiv<nIV;iiv++){
     TaChannel *aChannel = aInput->GetChannel(sIVlist[iiv]);
     fIndependentVar.push_back(aChannel);
+    fIVMaps[sIVlist[iiv]] = aChannel;
   }
 
 }

@@ -10,7 +10,27 @@ TaLagrangian::TaLagrangian(Int_t ana_index,TaConfig *aConfig){
   cout << __PRETTY_FUNCTION__ << endl;
 #endif
   Init(ana_index,aConfig);
+  fRawDVlist = aConfig->GetRawDVlist();
+  fChannelDefinition = aConfig->GetChannelDefintion();
   LoadConstraint(ana_index,aConfig);
+}
+
+TMatrixD TaLagrangian::GetDetMonCovMatrix(Int_t imini){
+  Int_t nRawDV = fRawDVlist.size();
+  Int_t nIV = fIndependentVar.size();
+
+  TMatrixD retMatrix(nIV,nRawDV);
+  for(int irow=0;irow<nIV;irow++)
+    for(int icol=0;icol<nRawDV;icol++)
+      retMatrix[irow][icol]=GetCovariance(fDVMaps[fRawDVlist[icol]],
+					  fIndependentVar[irow],
+					  imini);
+#ifdef NOISY
+  cout << __PRETTY_FUNCTION__<< endl;
+  retMatrix.Print();
+#endif
+  return retMatrix;
+
 }
 
 void TaLagrangian::LoadConstraint(Int_t ana_index, TaConfig *aConfig){
@@ -32,7 +52,7 @@ void TaLagrangian::LoadConstraint(Int_t ana_index, TaConfig *aConfig){
 
   TMatrixD* sens_matrix = (TMatrixD*) ext_file.Get("sens_matrix"); 
   nCoil = sCoilList.size();
-  Int_t nDet = sDVlist.size();
+  Int_t nDet = fRawDVlist.size();
   Int_t nMon = sIVlist.size();
 
   detConstraints.ResizeTo(nCoil,nDet);
@@ -46,9 +66,9 @@ void TaLagrangian::LoadConstraint(Int_t ana_index, TaConfig *aConfig){
     Int_t index_coil = iter_coil-(*ext_coil_array).begin();
     for(int idet=0;idet<nDet;idet++){
       auto iter_det = find((*ext_dv_array).begin(),(*ext_dv_array).end(),
-			   GetBaseName(sDVlist[idet]));
+			   GetBaseName(fRawDVlist[idet]));
       if(iter_det==(*ext_dv_array).end())
-	cerr<< sDVlist[idet] << " not found in matrix files." << endl;
+	cerr<< fRawDVlist[idet] << " not found in matrix files." << endl;
       Int_t index_det = iter_det-(*ext_dv_array).begin();
       detConstraints(icoil,idet)=(*sens_matrix)[index_det][index_coil];
     }
@@ -69,7 +89,7 @@ void TaLagrangian::LoadConstraint(Int_t ana_index, TaConfig *aConfig){
   ext_file.Close();
 }
 
-TMatrixD TaLagrangian::Solve(TMatrixD CovDM, TMatrixD CovMM){
+vector<vector<Double_t> >  TaLagrangian::Solve(TMatrixD CovDM, TMatrixD CovMM){
 #ifdef NOISY
   cout << __PRETTY_FUNCTION__ << endl;
 #endif
@@ -89,21 +109,61 @@ TMatrixD TaLagrangian::Solve(TMatrixD CovDM, TMatrixD CovMM){
   TMatrixD solutionM = invlhsM*rhsM;
   TMatrixD slopeM(nMon,nDet);
   slopeM=solutionM.GetSub(0,nMon-1,0,nDet-1);
-#ifdef NOISY	
+#ifdef DEBUG	
   cout << " -- Slopes Matrix (nMon x nDet) " << endl;
   slopeM.Print();
 #endif
-
-  // #ifdef NOISY
-  //       cout << " -- Check Slope-Sensitivity Consistency " << endl;
-  //       TMatrixD ZeroM = monCtrans*slopeM- detCtrans;
-  //       ZeroM.Print();
-  // #endif 
-  return slopeM;
+  vector<vector<Double_t> > fSlopesContainer;
+  
+  auto iter_dv = sDVlist.begin();
+  while(iter_dv!=sDVlist.end()){
+    auto iter_find = find(fRawDVlist.begin(),fRawDVlist.end(),
+			  *iter_dv);
+    if(iter_find!=fRawDVlist.end()){
+      Int_t index = iter_find - fRawDVlist.begin();
+      fSlopesContainer.push_back(GetColumnVector(slopeM,index));
+    }else{
+      auto iter_map = fChannelDefinition.find(*iter_dv);
+      if(iter_map == fChannelDefinition.end()){
+	cerr<< " -- Error: " <<  *iter_dv 
+	    << "'s definition is not found " << endl;
+	vector<Double_t> fZero(nMon,0.0);
+	fSlopesContainer.push_back(fZero);
+      }else{
+	vector< pair<Double_t,TString> >  myDefArray = fChannelDefinition[*iter_dv];
+	vector<Double_t> mySlope(nMon,0.0);
+	auto iter_def = myDefArray.begin();
+	while(iter_def!=myDefArray.end()){
+	  Double_t weight =  (*iter_def).first;
+	  TString element_name =  (*iter_def).second;
+	  Int_t index = FindRawDVIndexFromList(element_name);
+	  vector<Double_t> fElementSlope(nMon,0.0);
+	  if(index!=-1)
+	    fElementSlope = GetColumnVector(slopeM,index);
+	  for(int imon=0;imon<nMon;imon++)
+	    mySlope[imon]+=weight*fElementSlope[imon];
+	  iter_def ++;
+	} // end of loop over combiner element
+	fSlopesContainer.push_back(mySlope);
+      } // end of test if definition is found 
+    } // end test if it is combined channel
+    iter_dv++;
+  } // end of dv loop
+  return fSlopesContainer;
 }
 
 TString TaLagrangian::GetBaseName(TString in){
   in.ReplaceAll("diff_","");
   in.ReplaceAll("asym_","");
   return in;
+}
+
+Int_t TaLagrangian::FindRawDVIndexFromList(TString raw_name){
+  Int_t index = -1;
+  auto iter_find = find(fRawDVlist.begin(),fRawDVlist.end(),
+			raw_name);
+  if(iter_find!=fRawDVlist.end())
+    index = iter_find - fRawDVlist.begin();
+
+  return index;
 }

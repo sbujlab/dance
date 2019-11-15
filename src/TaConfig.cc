@@ -29,7 +29,6 @@ Bool_t TaConfig::ParseFile(TString fileName){
   pair<Int_t,TString> myIDName;
   Int_t myIndex;
   Int_t index_ana = 0;
-  Int_t channel_count=0;
   while(sline.ReadLine(configFile) ){
     if(sline.Contains(comment)) // FIXME
       continue;
@@ -46,21 +45,17 @@ Bool_t TaConfig::ParseFile(TString fileName){
     if(!isInModulde){
       vecStr = ParseLine(sline, a_single_space);
       if(vecStr[0]=="dv"){
-	fDVlist.push_back(vecStr[1]);
-	if(device_map.find(vecStr[1])==device_map.end()){
-	  device_map[vecStr[1]]=channel_count++;
-	  device_list.push_back(vecStr[1]);
-	}
-      }
-      else if(vecStr[0]=="det" || vecStr[0]=="mon"){
+	LoadDVChannel(vecStr[1]);
+      } else if(vecStr[0]=="det" || vecStr[0]=="mon"){
 	if(vecStr[1].Contains("=")){
 	  vector<TString> elements_array=ParseChannelDefinition(vecStr[1]);
 	  vector<TString>::iterator iter_ele = elements_array.begin();
 	  while(iter_ele!=elements_array.end()){
 	    TString myName = *iter_ele;
 	    if(device_map.find(myName)==device_map.end()){
-	      device_map[myName]=channel_count++;
 	      device_list.push_back(myName);
+	      Int_t index = device_list.size()-1;
+	      device_map[myName]=index;      
 	      fDependentVarArray.push_back(myName);
 #ifdef DEBUG
 	      cout << myName << endl;
@@ -76,10 +71,11 @@ Bool_t TaConfig::ParseFile(TString fileName){
 
 	}else{
 	  if(device_map.find(vecStr[1])==device_map.end()){
-	    device_map[vecStr[1]]=channel_count++;
 	    device_list.push_back(vecStr[1]);
+	    Int_t index = device_list.size()-1;
+	    device_map[vecStr[1]]=index;      
 #ifdef DEBUG
-	      cout << vecStr[1] << endl;
+	    cout << vecStr[1] << endl;
 #endif
 	    fDependentVarArray.push_back(vecStr[1]);
 	    fRawElementArray.push_back(vecStr[1]);
@@ -97,8 +93,9 @@ Bool_t TaConfig::ParseFile(TString fileName){
       if(vecStr[0]=="iv"){
 	(fIVMap[myIndex]).push_back(vecStr[1]);
 	if(device_map.find(vecStr[1])==device_map.end()){
-	  device_map[vecStr[1]]=channel_count++;
 	  device_list.push_back(vecStr[1]);
+	  Int_t index = device_list.size()-1;
+	  device_map[vecStr[1]]=index;      
 	}
       }else if(vecStr[0]=="mon"){
 	(fMonitorMap[myIndex]).push_back(vecStr[1]);
@@ -109,8 +106,9 @@ Bool_t TaConfig::ParseFile(TString fileName){
 	  while(iter_ele!=elements_array.end()){
 	    TString myName = *iter_ele;
 	    if(device_map.find(myName)==device_map.end()){
-	      device_map[myName]=channel_count++;
 	      device_list.push_back(myName);
+	      Int_t index = device_list.size()-1;
+	      device_map[vecStr[1]]=index;      
 	      fDependentVarArray.push_back(myName);
 #ifdef DEBUG
 	      cout << myName << endl;
@@ -123,9 +121,9 @@ Bool_t TaConfig::ParseFile(TString fileName){
 
 	}else{
 	  if(device_map.find(vecStr[1])==device_map.end()){
-	    device_map[vecStr[1]]=channel_count++;
 	    device_list.push_back(vecStr[1]);
-
+	    Int_t index = device_list.size()-1;
+	    device_map[vecStr[1]]=index;      
 	    fDependentVarArray.push_back(vecStr[1]);
 	    fRawElementArray.push_back(vecStr[1]);
 	  } 
@@ -198,6 +196,80 @@ vector<VAnalysisModule*> TaConfig::GetAnalysisArray(){
   return fAnalysisArray;
 }
 
+void TaConfig::LoadDVChannel(TString input){
+  
+  if(input.Contains("=")){
+    Ssiz_t equal_pos =  input.First('=');
+    TString combo_name = input(0,equal_pos);
+    fDVlist.push_back(combo_name);
+    if(device_map.find(combo_name)==device_map.end()){
+      device_list.push_back(combo_name);
+      Int_t index = device_list.size()-1;
+      device_map[combo_name]=index;      
+    }
+
+    input.Remove(0,equal_pos+1);
+    TString def_formula = input;
+    def_formula.ReplaceAll(" ","");
+#ifdef DEBUG
+    cout << "combo_name:" << combo_name << endl ;
+    cout << "def_formula:" << def_formula << endl ;
+#endif
+    while(def_formula.Length()>0){
+      Ssiz_t next_plus = def_formula.Last('+');
+      Ssiz_t next_minus = def_formula.Last('-');
+      Ssiz_t length = def_formula.Length();
+      Ssiz_t head =0;
+      if(next_minus>next_plus)
+	head = next_minus;
+      else if(next_plus>next_minus)
+	head = next_plus;
+
+      TString extracted = def_formula(head,length-head);
+#ifdef DEBUG
+      cout << extracted << ":";
+#endif
+      if(extracted.Contains("*")){
+	Ssiz_t aster_pos = extracted.First('*');
+	Ssiz_t form_length = extracted.Length();
+	TString elementName = extracted(aster_pos+1,form_length-(aster_pos+1));
+	TString coeff = extracted(0,aster_pos);
+	fChannelDefinition[combo_name].push_back(make_pair(coeff.Atof(),elementName));
+	if(device_map.find(elementName)==device_map.end()){
+	  fDVlist.push_back(elementName);
+	  device_list.push_back(elementName);
+	  Int_t index = device_list.size()-1;
+	  device_map[elementName]=index;      
+	}
+#ifdef DEBUG
+	cout << coeff<< "  " << elementName << endl;
+#endif
+      }else {
+	Double_t coeff;
+	if(extracted.Contains("-"))
+	  coeff=-1.0;
+	else
+	  coeff=1.0;
+	extracted.ReplaceAll("+","");
+	extracted.ReplaceAll("-","");
+	fChannelDefinition[combo_name].push_back(make_pair(coeff,extracted));
+#ifdef DEBUG
+	cout << coeff<< "  " << extracted << endl;
+#endif
+      }
+      def_formula.Remove(head,length-head);
+    }
+  }else{
+    fDVlist.push_back(input);
+    fRawDVlist.push_back(input);
+    if(device_map.find(input)==device_map.end()){
+      device_list.push_back(input);
+      Int_t index = device_list.size()-1;
+      device_map[input]=index;      
+    }
+  }
+}
+
 vector<TString> TaConfig::ParseChannelDefinition(TString input){
 #ifdef NOISY
   cout << __PRETTY_FUNCTION__ << endl;
@@ -226,13 +298,13 @@ vector<TString> TaConfig::ParseChannelDefinition(TString input){
     Ssiz_t length = def_formula.Length();
     Ssiz_t head =0;
     if(next_minus>next_plus)
-       head = next_minus;
+      head = next_minus;
     else if(next_plus>next_minus)
       head = next_plus;
 
     TString extracted = def_formula(head,length-head);
 #ifdef DEBUG
-  cout << extracted << endl;
+    cout << extracted << endl;
 #endif
     if(extracted.Contains("*")){
       Ssiz_t aster_pos = extracted.First('*');

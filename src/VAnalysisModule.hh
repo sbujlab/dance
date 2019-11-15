@@ -33,7 +33,9 @@ protected:
   TaOutput *fOutput;
   vector<pair<Int_t,Int_t> > minirun_range;
   vector<TaChannel*> fDependentVar;
+  map<TString,TaChannel*> fDVMaps;
   vector<TaChannel*> fIndependentVar;
+  map<TString,TaChannel*> fIVMaps;
   vector<TaChannel*> fOutputChannels;
   vector<TaChannel*> fCorrections;
   TaChannel* fChannelCutFlag;
