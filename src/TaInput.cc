@@ -154,7 +154,7 @@ void TaInput::WriteRawChannels(TaOutput *aOutput){
     ievt++;
 
     if(goodCounts==minirun_size){
-      mini_end = ievt;
+      mini_end = ievt-1;
       minirun_range.push_back(make_pair(mini_start,mini_end));
       cout << " -- Mini-run ends at event: " << mini_end << endl;
       mini_start = mini_end+1;

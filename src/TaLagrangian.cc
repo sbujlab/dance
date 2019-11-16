@@ -109,7 +109,7 @@ vector<vector<Double_t> >  TaLagrangian::Solve(TMatrixD CovDM, TMatrixD CovMM){
   TMatrixD solutionM = invlhsM*rhsM;
   TMatrixD slopeM(nMon,nDet);
   slopeM=solutionM.GetSub(0,nMon-1,0,nDet-1);
-#ifdef DEBUG	
+#ifdef NOISY	
   cout << " -- Slopes Matrix (nMon x nDet) " << endl;
   slopeM.Print();
 #endif
