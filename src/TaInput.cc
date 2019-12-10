@@ -17,6 +17,17 @@ TaInput::TaInput(TaConfig *aConfig){
   isExternalConstraint=kFALSE;
   InitChannels(aConfig);
   input_name = aConfig->GetInputName();
+  if(run_number==0){
+    Ssiz_t pos_head = input_name.Last('_');
+    Ssiz_t pos_end = input_name.Last('.');
+    Ssiz_t length = pos_end-pos_head-1;
+    TString run_dot_seg = TString(input_name(pos_head+1,length));
+    Ssiz_t pos_dot = run_dot_seg.Last('.');
+    run_number = TString(run_dot_seg(0,pos_dot)).Atoi();
+    run_dot_seg.Remove(0,pos_dot+1);
+    seg_number = run_dot_seg.Atoi();
+    aConfig->SetRunNumber(run_number);
+  }
   input_path=aConfig->GetConfigParameter("input_path");
   input_prefix=aConfig->GetConfigParameter("input_prefix");
   minirun_size = (aConfig->GetConfigParameter("minirun_size")).Atof();
@@ -40,14 +51,6 @@ Bool_t TaInput::LoadROOTFile(){
     cout << " -- Opening "
 	 << input_name << endl;
     input_file = TFile::Open(input_name);
-    Ssiz_t pos_head = input_name.Last('_');
-    Ssiz_t pos_end = input_name.Last('.');
-    Ssiz_t length = pos_end-pos_head-1;
-    TString run_dot_seg = TString(input_name(pos_head+1,length));
-    Ssiz_t pos_dot = run_dot_seg.Last('.');
-    run_number = TString(run_dot_seg(0,pos_dot)).Atoi();
-    run_dot_seg.Remove(0,pos_dot+1);
-    seg_number = run_dot_seg.Atoi();
   }
 
   if(input_file==NULL){
