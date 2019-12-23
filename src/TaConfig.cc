@@ -15,7 +15,7 @@ Bool_t TaConfig::ParseFile(TString fileName){
   ifstream configFile;
   cout << " -- Opening " << configName << endl;
   configFile.open(configName.Data());
-  if(configFile==NULL){
+  if(!configFile.is_open()){
     cerr << __PRETTY_FUNCTION__ 
 	 << " Error: failed to open config file "
 	 << configName << endl;
