@@ -187,7 +187,7 @@ void TaSuperCycle::CalcSensitivities(){
       fSensitivityMap[make_pair(dv_name,coil_name)] = icount++;
       fSamples.push_back(fCovarianceArray[idv][icoil].GetN());
       if(fCovarianceArray[idv][icoil].GetN()<=50 ||
-	 fCoilVarianceArray[idv][icoil].GetM2()/fCoilVarianceArray[idv][icoil].GetN()<10 ){
+	 fCoilVarianceArray[idv][icoil].GetM2()/fCoilVarianceArray[idv][icoil].GetN()<200 ){
 	fSensitivity.push_back(0.0);
 	fSensitivity_err.push_back(-1.0);
 	continue;

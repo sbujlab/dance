@@ -57,10 +57,12 @@ Bool_t TaDitAna::LoadModulationData(TaInput *aInput){
   TTree *evt_tree = aInput->GetEvtTree();
 
   TEventList *elist = new TEventList("elist");
+  TEventList *elist_all = new TEventList("elist_all");
   cout << " -- beam mod event cuts"
        << bmod_cut.GetTitle() << endl;
   Int_t nGoodEvents = evt_tree->Draw(">>+elist",bmod_cut,"goff");
-  if(nGoodEvents==0){
+  Int_t nBeamModEvents = evt_tree->Draw(">>+elist_all","bmwcycnum>0","goff");
+  if(nBeamModEvents==0){
     cerr<< " Error: No Beam Modulation Data is found. " << endl;
     cerr<< " Error: Analysis Aborted!  " << endl;
     return kFALSE;
@@ -87,9 +89,15 @@ Bool_t TaDitAna::LoadModulationData(TaInput *aInput){
   Double_t last_obj=0;
   Int_t cur_index=0;
   Double_t bmwobj_isLock=kFALSE;
-  for(int i=0;i<nGoodEvents;i++){
-    Int_t ievt=elist->GetEntry(i);
+  Bool_t kGoodEvent;
+  for(int i=0;i<nBeamModEvents;i++){
+    Int_t ievt=elist_all->GetEntry(i);
     evt_tree->GetEntry(ievt);
+    if(elist->Contains(ievt))
+      kGoodEvent = kTRUE;
+    else
+      kGoodEvent = kFALSE;
+
     if(cycle_id==0 || bmwobj==0)
       continue;
     if(cycle_id >last_cycle_id){
@@ -116,7 +124,7 @@ Bool_t TaDitAna::LoadModulationData(TaInput *aInput){
       } // end of searching loop
     } // end of new bmwobj lock
 
-    if(bmwobj_isLock)
+    if(bmwobj_isLock && kGoodEvent)
       supercycle_buff.UpdateSamples(cur_index);
 
   } // end of Good Events loop
