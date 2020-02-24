@@ -27,7 +27,7 @@ Bool_t TaConfig::ParseFile(TString fileName){
   Bool_t isInModulde = kFALSE;
   vector<TString> vecStr;
   pair<Int_t,TString> myIDName;
-  Int_t myIndex;
+  Int_t myIndex=-1;
   Int_t index_ana = 0;
   while(sline.ReadLine(configFile) ){
     if(sline.Contains(comment)) // FIXME
@@ -38,8 +38,8 @@ Bool_t TaConfig::ParseFile(TString fileName){
       TString myType = ParseAnalysisType(sline);
       fAnalysisTypeArray.push_back(myType);
       myIndex = index_ana++;
-      map<TString, vector<TaDefinition> >aNewChMap;
-      map<TString, TString> aNewParmMap
+      map<TString, vector<TaDefinition*> >aNewChMap;
+      map<TString, TString> aNewParmMap;
       fLocalDeviceMap.push_back(aNewChMap);
       fAnalysisParameters.push_back(aNewParmMap);
       continue;
@@ -47,11 +47,10 @@ Bool_t TaConfig::ParseFile(TString fileName){
     
     vecStr = ParseLine(sline, a_single_space);
     if(isKeyWord(vecStr[0])){ // is Channel List
-      TaDefinition aDef =ParseChannelDefinition(vecStr[1]);
+      TaDefinition* aDef =ParseChannelDefinition(vecStr[1]);
       if(isInModulde)
-	fLocalDeviceMap[myIndex][vecStr[0]].push_back(aDef);
-      else
-	fGlobalDeviceMap[vecStr[0]].push_back(aDef);
+	UpdateDeviceList(fLocalDeviceMap[myIndex][vecStr[0]],aDef);
+      UpdateDeviceList(fGlobalDeviceMap[vecStr[0]],aDef);
       
     }else{  // is analysis parameter
       
@@ -127,69 +126,76 @@ vector<VAnalysisModule*> TaConfig::GetAnalysisArray(){
   return fAnalysisArray;
 }
 
-TaDefinition TaConfig::ParseChannelDefinition(TString input){
+TaDefinition* TaConfig::ParseChannelDefinition(TString input){
   input.ReplaceAll(" ","");
-  Ssiz_t equal_pos =  input.First('=');
-  TString channel_name = input(0,equal_pos);
-  TaDefinition aDef(channel_name);
-  
-  input.Remove(0,equal_pos+1);
-  TString def_formula = input;
-  while(def_formula.Length()>0){
-    Ssiz_t next_plus = def_formula.Last('+');
-    Ssiz_t next_minus = def_formula.Last('-');
-    Ssiz_t length = def_formula.Length();
-    Ssiz_t head =0;
-    if(next_minus>next_plus)
-      head = next_minus;
-    else if(next_plus>next_minus)
-      head = next_plus;
+  TaDefinition* aDef;
+  if(!input.Contains("=")){
+    aDef = new TaDefinition(input);
+    aDef->SetDefFlag(kFALSE);
+  } else{
+    Ssiz_t equal_pos =  input.First('=');
+    TString channel_name = input(0,equal_pos);
+    aDef = new  TaDefinition(channel_name);
+    aDef->SetDefFlag(kTRUE);
+    input.Remove(0,equal_pos+1);
+    TString def_formula = input;
+    while(def_formula.Length()>0){
+      Ssiz_t next_plus = def_formula.Last('+');
+      Ssiz_t next_minus = def_formula.Last('-');
+      Ssiz_t length = def_formula.Length();
+      Ssiz_t head =0;
+      if(next_minus>next_plus)
+	head = next_minus;
+      else if(next_plus>next_minus)
+	head = next_plus;
 
-    TString extracted = def_formula(head,length-head);
+      TString extracted = def_formula(head,length-head);
 #ifdef DEBUG
-    cout << extracted << ":";
+      cout << extracted << ":";
 #endif
-    if(extracted.Contains("*")){
-      Ssiz_t aster_pos = extracted.First('*');
-      Ssiz_t form_length = extracted.Length();
-      TString elementName = extracted(aster_pos+1,form_length-(aster_pos+1));
-      TString coeff = extracted(0,aster_pos);
-      aDef.AddElement(coeff.Atof(),elementName);
-      if(device_map.find(elementName)==device_map.end()){
-	TaDefinition aRawElement(elementName);
-	device_list.push_back(aRawElement);
-	Int_t index = device_list.size()-1;
-	device_map[elementName]=index;      
+      if(extracted.Contains("*")){
+	Ssiz_t aster_pos = extracted.First('*');
+	Ssiz_t form_length = extracted.Length();
+	TString elementName = extracted(aster_pos+1,form_length-(aster_pos+1));
+	TString coeff = extracted(0,aster_pos);
+	aDef->AddElement(coeff.Atof(),elementName);
+	if(device_map.find(elementName)==device_map.end()){
+	  TaDefinition* aRawElement = new TaDefinition(elementName);
+	  device_list.push_back(aRawElement);
+	  Int_t index = device_list.size()-1;
+	  device_map[elementName]=index;      
+	}
+#ifdef DEBUG
+	cout << coeff<< "  " << elementName << endl;
+#endif
+      }else {
+	Double_t coeff;
+	if(extracted.Contains("-"))
+	  coeff=-1.0;
+	else
+	  coeff=1.0;
+	extracted.ReplaceAll("+","");
+	extracted.ReplaceAll("-","");
+	aDef->AddElement(coeff,extracted);
+	if(device_map.find(extracted)==device_map.end()){
+	  TaDefinition *aRawElement = new TaDefinition(extracted);
+	  device_list.push_back(aRawElement);
+	  Int_t index = device_list.size()-1;
+	  device_map[extracted]=index;      
+	}
+#ifdef DEBUG
+	cout << coeff<< "  " << extracted << endl;
+#endif
       }
-#ifdef DEBUG
-      cout << coeff<< "  " << elementName << endl;
-#endif
-    }else {
-      Double_t coeff;
-      if(extracted.Contains("-"))
-	coeff=-1.0;
-      else
-	coeff=1.0;
-      extracted.ReplaceAll("+","");
-      extracted.ReplaceAll("-","");
-      aDef.AddElement(coeff,extracted);
-      if(device_map.find(extracted)==device_map.end()){
-	TaDefinition aRawElement(extracted);
-	device_list.push_back(aRawElement);
-	Int_t index = device_list.size()-1;
-	device_map[extracted]=index;      
-      }
-#ifdef DEBUG
-      cout << coeff<< "  " << extracted << endl;
-#endif
-    }
-    def_formula.Remove(head,length-head);
-  } // end of detecting formula
+      def_formula.Remove(head,length-head);
+    } // end of detecting formula
+  }  // end  of if HasUser Def_Formula
   
-  if(device_map.find(channel_name)==device_map.end()){
+  TString ch_name = aDef->GetName();
+  if(device_map.find(ch_name)==device_map.end()){
     device_list.push_back(aDef);
     Int_t index = device_list.size()-1;
-    device_map[channel_name]=index;      
+    device_map[ch_name]=index;      
   }
   return aDef;
 }
@@ -204,5 +210,16 @@ Bool_t TaConfig::isKeyWord(TString input){
     return kTRUE;
   else
     return kFALSE;
+}
 
+void TaConfig::UpdateDeviceList(vector<TaDefinition*> &alist,
+			       TaDefinition* aDef){
+  TString myName =aDef->GetName();
+  auto iter = alist.begin();
+  while(iter!=alist.end()){
+    if(myName == (*iter)->GetName())
+      return;
+    iter++;
+  }
+  alist.push_back(aDef);
 }

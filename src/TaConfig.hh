@@ -1,9 +1,3 @@
-#ifndef __TaConfig_hh__
-#define __TaConfig_hh__
-
-#include "TaInput.hh"
-#include "TaOutput.hh"
-
 #include "TString.h"
 #include "Rtypes.h"
 
@@ -11,25 +5,18 @@
 #include <map>
 #include <iostream>
 #include <fstream>
-
 using namespace std;
+
+#ifndef __TaConfig_hh__
+#define __TaConfig_hh__
+
+#include "TaInput.hh"
+#include "TaOutput.hh"
+#include "TaDefinition.hh"
 class TaOutput;
 class VAnalysisModule;
 class TaRegression;
-
-class TaDefinition{
-public:
-  TaDefinition(TString input){ nick_name = input;};
-  virtual ~TaDefinition();
-  TString GetName(){ return nick_name;};
-  void AddElement(Double_t factor,TString chname){
-    fRawElementArray.push_back(make_pair(factor,chname));
-  };
-private:
-  TString nick_name;
-  vector< pair<Double_t, TString> > fRawElementArray;
-};
-
+class TaDefinition;
 class TaConfig{
 public:
   TaConfig();
@@ -40,13 +27,42 @@ public:
   TString GetAnalysisParameter(Int_t index, TString key);
   inline vector<TString> GetAnalysisTypeArray() const {return fAnalysisTypeArray;};
 
-  inline vector<TaDefinition> GetNameList(TString key) const {
+
+  inline vector<TaDefinition*> GetDefList(TString key){
     return fGlobalDeviceMap[key];};
-  
-  inline vector<TaDefinition> GetNameListByIndex(Int_t ana_idx,TString key) const {
+  inline vector<TaDefinition*> GetDefListByIndex(Int_t ana_idx,TString key){
     return fLocalDeviceMap[ana_idx][key];};
+  inline vector<TaDefinition*> GetDeviceDefList() const {return device_list;};
+
+  vector<TString> GetNameList(TString key){
+    vector<TString> fRet;
+    auto iter =  fGlobalDeviceMap[key].begin();
+    while(iter!=fGlobalDeviceMap[key].end()){
+      fRet.push_back( (*iter)->GetName());
+      iter++;
+    }
+    return fRet;
+  };
+
+  vector<TString> GetNameListByIndex(Int_t ana_idx,TString key){
+    vector<TString> fRet;
+    auto iter =  fLocalDeviceMap[ana_idx][key].begin();
+    while(iter!=fLocalDeviceMap[ana_idx][key].end()){
+      fRet.push_back( (*iter)->GetName());
+      iter++;
+    }
+    return fRet;
+  };
   
-  inline vector<TaDefinition> GetDeviceList() const {return device_list;};
+  vector<TString> GetDeviceNameList() {
+    vector<TString> fRet;
+    auto iter =  device_list.begin();
+    while(iter!=device_list.end()){
+      fRet.push_back( (*iter)->GetName());
+      iter++;
+    }
+    return fRet;
+  };
   
   inline Int_t GetRunNumber() const { return run_number;};
   inline TString GetInputName() const { return input_name;};
@@ -54,9 +70,10 @@ public:
   inline void SetRunNumber(Int_t i){run_number=i;};
   
   vector<VAnalysisModule*> GetAnalysisArray();
-  TaDefinition ParseChannelDefinition(TString );
-  void LoadDVChannel(TString);
+  TaDefinition* ParseChannelDefinition(TString );
   Bool_t isKeyWord(TString input );
+  void UpdateDeviceList( vector<TaDefinition*>  &alist,
+			TaDefinition* aDef);
 private:
 
   TString configName;
@@ -66,10 +83,10 @@ private:
   map< TString, TString> fConfigParameters;
   vector< map< TString, TString> > fAnalysisParameters;
 
-  vector< TaDefinition> device_list;
+  vector< TaDefinition*> device_list;
   map< TString, Int_t> device_map;
-  map< TString, vector<TaDefinition> > fGlobalDeviceMap;
-  vector< map< TString, vector< TaDefinition> > >  fLocalDeviceMap;
+  map< TString, vector<TaDefinition*> > fGlobalDeviceMap;
+  vector< map< TString, vector< TaDefinition*> > >  fLocalDeviceMap;
   vector< TString > fAnalysisTypeArray;
 
   vector<TString>  ParseLine(TString, TString);

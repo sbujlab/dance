@@ -11,7 +11,11 @@ TaSuperCycle::TaSuperCycle(){
   kDeviceErrorCut = kFALSE;
 }
 void TaSuperCycle::LoadDetectorList(vector<TString> input){
-  fDetectorList = input;
+  auto iter = input.begin();
+  while(iter!=input.end()){
+    fDetectorList.push_back(*iter);
+    iter++;
+  }
 }
 void TaSuperCycle::RegisterDependentVarArray(vector<TaDataElement*> input_array){
 #ifdef NOISY
@@ -41,8 +45,8 @@ void TaSuperCycle::ConfigSlopesCalculation(TaConfig *fConfig){
   while(iter_anatype!=fAnalysisTypeArray.end()){
     if((*iter_anatype)=="slope"){
       Int_t ana_index = iter_anatype-fAnalysisTypeArray.begin();
-      fcoil_list.push_back(fConfig->GetCoilList(ana_index));
-      fmonitor_list.push_back(fConfig->GetMonitorList(ana_index));
+      fcoil_list.push_back(fConfig->GetNameListByIndex(ana_index,"coil"));
+      fmonitor_list.push_back(fConfig->GetNameListByIndex(ana_index,"mon"));
       slope_tree_name.push_back(fConfig->GetAnalysisParameter(ana_index,"tree_name"));
     }
     iter_anatype++;
@@ -141,9 +145,6 @@ Bool_t TaSuperCycle::GetMatrixSolution(TMatrixD lhs, TMatrixD rhs,
     sol = lhs*mXT*inv;
   }
 
-#ifdef DEBUG  
-  sol.Print();
-#endif
   return isGood;
 }
 
