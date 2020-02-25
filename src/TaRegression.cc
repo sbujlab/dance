@@ -13,7 +13,6 @@ TaRegression::TaRegression(Int_t ana_index, TaConfig *fConfig){
 }
 
 void TaRegression::Process(TaOutput *fOutput){
-
 #ifdef NOISY
   cout << __PRETTY_FUNCTION__ << endl;
 #endif

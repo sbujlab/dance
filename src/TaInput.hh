@@ -15,6 +15,7 @@
 using namespace std;
 class TaConfig;
 class TaChannel;
+class TaDefinition;
 class TaOutput;
 class TaInput{
 public:
@@ -32,6 +33,7 @@ public:
   inline vector< pair<Int_t,Int_t> > GetMiniRange(){return minirun_range;};
 
   void InitChannels(TaConfig*);
+  void ConnectChannels();
   void WriteRawChannels(TaOutput*);
   Bool_t LoadROOTFile();
   TaChannel* GetChannel(TString name);
@@ -55,8 +57,9 @@ private:
   Int_t minirun_size;
   vector<pair<Int_t, Int_t> > minirun_range;
   Int_t nEntries;
+  
+  map<TString, TaChannel*> fChannelMap;
   vector<TaChannel*> fChannelArray;
-  map<TString, Int_t> fChannelMap;
   vector<TString> fChannelNames;
   
   TaChannel* fChannelErrorFlag;

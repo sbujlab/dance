@@ -2,18 +2,29 @@
 ClassImp(TaChannel);
 
 TaChannel::TaChannel():fOutputValue(0.0){
+  kUseDefinition = kFALSE;
+}
+
+TaChannel::TaChannel(TString tree, TaDefinition* adef)
+  :fOutputValue(0.0){
+  fTreeName = tree;
+  fChannelName = adef->GetName();
+  myDefinition = adef;
+  kUseDefinition = kFALSE;
 }
 
 TaChannel::TaChannel(TString tree, TString channel)
   :fOutputValue(0.0){
   fTreeName = tree;
   fChannelName = channel;
+  kUseDefinition = kFALSE;
 }
 
 TaChannel::~TaChannel(){}
 
 void TaChannel::ConnectChannels(vector<TaChannel*> in_channels, 
 				vector<Double_t> in_prefactors){
+  SetDefUsage(kTRUE);
   fChannels = in_channels;
   fPrefactors = in_prefactors;
 }
@@ -21,10 +32,9 @@ void TaChannel::ConnectChannels(vector<TaChannel*> in_channels,
 void TaChannel::DefineSubtraction(TaChannel* raw, TaChannel* correction){
   fChannels.clear();
   fPrefactors.clear();
-  fChannels.push_back(raw);
-  fPrefactors.push_back(1);
-  fChannels.push_back(correction);
-  fPrefactors.push_back(-1);
+  vector<TaChannel*> ch_pair= {raw,correction};
+  vector<Double_t> factor_pair= {1,-1};
+  ConnectChannels(ch_pair,factor_pair);
 }
 
 void TaChannel::CalcCombination(){
@@ -36,6 +46,7 @@ void TaChannel::CalcCombination(){
 }
 
 void TaChannel::FillDataArray(){
+  FillOutputValue();
   fDataArray.push_back(fOutputValue);
 }
 
@@ -51,14 +62,17 @@ void TaChannel::ConstructTreeBranch(TaOutput* fOutput){
 void TaChannel::ConstructMiniTreeBranch(TaOutput* fOutput,TString treename){
   fOutput->ConstructStatTreeBranch(treename,fChannelName, mini_stat);
 }
+
 void TaChannel::ConstructSumTreeBranch(TaOutput* fOutput,TString treename){
   fOutput->ConstructStatTreeBranch(treename,fChannelName, run_stat);
 }
 
-void TaChannel::FillOutputValue(){
-  fOutputValue=fBranchValue;
+Double_t TaChannel::FillOutputValue(){
+  if(kUseDefinition){
+    CalcCombination();
+  }
+  return fOutputValue;
 }
-
 void TaChannel::AccumulateRunSum(){
   fRunAccumulator.Update(fOutputValue);
 }
