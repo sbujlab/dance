@@ -24,13 +24,14 @@ public:
   vector< vector<Double_t> > Solve(TMatrixD CovDM, TMatrixD CovMM);
   TMatrixD GetDetMonCovMatrix(Int_t mini);
   TString GetBaseName(TString);
+  void LoadRawDVList(TString);
+  void LoadRawDVList(vector<TString>);
 private:
   Int_t nCoil;
   TMatrixD detConstraints;
   TMatrixD monConstraints;
-  map<TString, vector< pair<Double_t,TString> > > fChannelDefinition;
   vector<TString> fRawDVlist;
-  Int_t FindRawDVIndexFromList(TString raw_namae);
+  Int_t FindRawDVIndexFromList(TString raw_name);
 
   ClassDef(TaLagrangian,0);
 };

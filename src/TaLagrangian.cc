@@ -10,8 +10,19 @@ TaLagrangian::TaLagrangian(Int_t ana_index,TaConfig *aConfig){
   cout << __PRETTY_FUNCTION__ << endl;
 #endif
   Init(ana_index,aConfig);
-  fRawDVlist = aConfig->GetRawDVlist();
-  fChannelDefinition = aConfig->GetChannelDefintion();
+
+  vector<TaDefinition*> fDVDefList = aConfig->GetDefList("dv");
+  auto iter_def = fDVDefList.begin();
+  while(iter_def!=fDVDefList.end()){
+    TString myName = (*iter_def)->GetName();
+    if( find(sDVlist.begin(),sDVlist.end(),myName)!=sDVlist.end()){
+      if( (*iter_def)->HasUserDefinition())
+	LoadRawDVList( (*iter_def)->GetRawChannelList());
+      else
+	LoadRawDVList(myName);
+    }
+    iter_def++;
+  }
   LoadConstraint(ana_index,aConfig);
 }
 
@@ -43,7 +54,7 @@ void TaLagrangian::LoadConstraint(Int_t ana_index, TaConfig *aConfig){
     cout << ext_filename <<" doesn't exist!" << endl;
     return;
   }
-  vector<TString> sCoilList = aConfig->GetCoilList(ana_index);
+  vector<TString> sCoilList = aConfig->GetNameListByIndex(ana_index,"coil");
   
   vector<TString> *ext_dv_array =
     (vector<TString>*)ext_file.Get("dv_array");
@@ -117,35 +128,29 @@ vector<vector<Double_t> >  TaLagrangian::Solve(TMatrixD CovDM, TMatrixD CovMM){
   
   auto iter_dv = sDVlist.begin();
   while(iter_dv!=sDVlist.end()){
-    auto iter_find = find(fRawDVlist.begin(),fRawDVlist.end(),
-			  *iter_dv);
-    if(iter_find!=fRawDVlist.end()){
-      Int_t index = iter_find - fRawDVlist.begin();
+    TaChannel* ch_ptr = fDVMaps[*iter_dv];
+    if( !(ch_ptr->HasUserDefinition()) ){
+      Int_t index = FindRawDVIndexFromList(*iter_dv);
       fSlopesContainer.push_back(GetColumnVector(slopeM,index));
-    }else{
-      auto iter_map = fChannelDefinition.find(*iter_dv);
-      if(iter_map == fChannelDefinition.end()){
-	cerr<< " -- Error: " <<  *iter_dv 
-	    << "'s definition is not found " << endl;
-	vector<Double_t> fZero(nMon,0.0);
-	fSlopesContainer.push_back(fZero);
-      }else{
-	vector< pair<Double_t,TString> >  myDefArray = fChannelDefinition[*iter_dv];
-	vector<Double_t> mySlope(nMon,0.0);
-	auto iter_def = myDefArray.begin();
-	while(iter_def!=myDefArray.end()){
-	  Double_t weight =  (*iter_def).first;
-	  TString element_name =  (*iter_def).second;
-	  Int_t index = FindRawDVIndexFromList(element_name);
-	  vector<Double_t> fElementSlope(nMon,0.0);
-	  if(index!=-1)
-	    fElementSlope = GetColumnVector(slopeM,index);
-	  for(int imon=0;imon<nMon;imon++)
-	    mySlope[imon]+=weight*fElementSlope[imon];
-	  iter_def ++;
-	} // end of loop over combiner element
-	fSlopesContainer.push_back(mySlope);
-      } // end of test if definition is found 
+    }else{ // if it is a cominbed channel
+      vector<TString> fRawElementList = ch_ptr->GetRawChannelList();
+      vector<Double_t> fWeights = ch_ptr->GetFactorArray();
+      vector<Double_t> mySlope(nMon,0.0);
+      
+      auto iter_ele = fRawElementList.begin();
+      while(iter_ele!=fRawElementList.end()){
+	Int_t ipos =iter_ele - fRawElementList.begin();
+	Double_t weight =  fWeights[ipos];
+	TString element_name =  (*iter_ele);
+	Int_t index = FindRawDVIndexFromList(element_name);
+	vector<Double_t> fElementSlope(nMon,0.0);
+	fElementSlope = GetColumnVector(slopeM,index);
+	for(int imon=0;imon<nMon;imon++)
+	  mySlope[imon]+=weight*fElementSlope[imon];
+	iter_ele ++;
+      } // end of loop over combiner element
+      fSlopesContainer.push_back(mySlope);
+
     } // end test if it is combined channel
     iter_dv++;
   } // end of dv loop
@@ -166,4 +171,18 @@ Int_t TaLagrangian::FindRawDVIndexFromList(TString raw_name){
     index = iter_find - fRawDVlist.begin();
 
   return index;
+}
+
+void TaLagrangian::LoadRawDVList(vector<TString> fRawElementList){
+  auto iter_ele = fRawElementList.begin();
+  while(iter_ele!=fRawElementList.end()){
+    if(FindRawDVIndexFromList(*iter_ele)==-1)
+      fRawDVlist.push_back(*iter_ele);
+    iter_ele++;
+  }
+}
+
+void TaLagrangian::LoadRawDVList(TString raw_name){
+  if(FindRawDVIndexFromList(raw_name)==-1)
+    fRawDVlist.push_back(raw_name);
 }
