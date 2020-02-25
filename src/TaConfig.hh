@@ -74,6 +74,9 @@ public:
   Bool_t isKeyWord(TString input );
   void UpdateDeviceList( vector<TaDefinition*>  &alist,
 			TaDefinition* aDef);
+
+  Bool_t CheckRunRange(TString input);
+  TString FindExtRootfile(TString format);
 private:
 
   TString configName;

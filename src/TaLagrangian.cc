@@ -48,7 +48,8 @@ void TaLagrangian::LoadConstraint(Int_t ana_index, TaConfig *aConfig){
 #ifdef NOISY
   cout << __PRETTY_FUNCTION__ << endl;
 #endif
-  TString ext_filename = aConfig->GetAnalysisParameter(ana_index,"sens_input");
+  TString ext_format = aConfig->GetAnalysisParameter(ana_index,"sens_input");
+  TString ext_filename = aConfig->FindExtRootfile(ext_format);
   TFile ext_file(ext_filename);
   if(!ext_file.IsOpen()){
     cout << ext_filename <<" doesn't exist!" << endl;

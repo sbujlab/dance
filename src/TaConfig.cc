@@ -3,7 +3,7 @@
 #include "TaLagrangian.hh"
 #include "TaCorrection.hh"
 #include "VAnalysisModule.hh"
-
+#include "TSystemDirectory.h"
 ClassImp(TaConfig);
 using namespace std;
 TaConfig::TaConfig(){}
@@ -223,4 +223,61 @@ void TaConfig::UpdateDeviceList(vector<TaDefinition*> &alist,
     iter++;
   }
   alist.push_back(aDef);
+}
+
+Bool_t TaConfig::CheckRunRange(TString input){
+  TString base_name = input;
+  Ssiz_t last_slash = base_name.Last('/');
+  base_name.Remove(0,last_slash+1);
+
+  Ssiz_t first_dot = base_name.First('.');
+  Ssiz_t last_dot = base_name.Last('.');
+
+  Bool_t kFound = kFALSE;
+  TString range = base_name(first_dot+1,last_dot-first_dot);
+  if(range.Contains('-')){
+    Ssiz_t dash_pos = range.First('-');
+    TString lower = range(0,dash_pos);
+    TString upper = range(dash_pos+1,range.Length()-(dash_pos+1));
+    if(run_number<=upper.Atoi() && run_number>=lower.Atoi())
+      kFound = kTRUE;
+  } else{
+    if(run_number == range.Atoi())
+      kFound = kTRUE;
+  }
+  return kFound;
+}
+
+TString TaConfig::FindExtRootfile(TString ext_format){
+  TString ext_filename;
+  TString target_dir = ext_format;
+  Ssiz_t length = target_dir.Length();
+  Ssiz_t last_slash = target_dir.Last('/');
+  Ssiz_t last_dot = target_dir.Last('.');
+  TString ext_prefix = target_dir(last_slash+1,last_dot-last_slash);
+  target_dir.Remove(last_slash+1, length-(last_slash+1) );
+  const char* dir_name = "";
+  const char* path= target_dir.Data();
+  TSystemDirectory *sysDir = new TSystemDirectory(dir_name,path);
+  TList* fileList = sysDir->GetListOfFiles();
+  if(fileList){
+    TIter next(fileList);
+    TSystemFile* sysfile;
+    while( (sysfile=(TSystemFile*)next()) ){
+      if(sysfile->IsDirectory())
+	continue;
+      TString name_buff = sysfile->GetName();
+      if(name_buff.Contains(ext_prefix)){
+	if(CheckRunRange(name_buff)){
+	  ext_filename = target_dir+name_buff;
+	  cout << " -- Found run range specified matrix: \n -- " 
+	       << ext_filename << endl;
+	  break;
+	}
+      }
+
+    }// end of fileList Loop;
+  }
+
+  return ext_filename;
 }

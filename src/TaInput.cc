@@ -60,6 +60,7 @@ Bool_t TaInput::LoadROOTFile(){
   }
 
   evt_tree = (TTree*)input_file->Get("evt");
+  bmw_tree = (TTree*)input_file->Get("evt_bmw");
   mul_tree = (TTree*)input_file->Get("mul");
   mulc_tree = (TTree*)input_file->Get("mulc");
   if(mulc_tree!=NULL)

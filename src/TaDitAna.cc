@@ -58,7 +58,9 @@ Bool_t TaDitAna::LoadModulationData(TaInput *aInput){
 #ifdef NOISY
   cout << __FUNCTION__ << endl;
 #endif
-  TTree *evt_tree = aInput->GetEvtTree();
+  TTree *evt_tree = aInput->GetBMWTree();
+  if(evt_tree==NULL || evt_tree->GetEntries()==0)
+    evt_tree = aInput->GetEvtTree();
 
   TEventList *elist = new TEventList("elist");
   TEventList *elist_all = new TEventList("elist_all");

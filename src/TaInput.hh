@@ -23,7 +23,7 @@ public:
   virtual ~TaInput();
 
   inline void SetRunNumber(Int_t i){run_number=i;};
-
+  inline TTree* GetBMWTree() const { return bmw_tree;};
   inline TTree* GetEvtTree() const { return evt_tree;};
   inline TTree* GetMulTree() const { return mul_tree;};
   inline Int_t GetRunNumber() const { return run_number;};
@@ -47,6 +47,7 @@ private:
 
   TFile* input_file;
   TTree* evt_tree;
+  TTree* bmw_tree;
   TTree* mul_tree;
   TTree* mulc_tree;
   Double_t run_number;
