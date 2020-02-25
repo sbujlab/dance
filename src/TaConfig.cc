@@ -1,6 +1,7 @@
 #include "TaConfig.hh"
 #include "TaRegression.hh"
 #include "TaLagrangian.hh"
+#include "TaCorrection.hh"
 #include "VAnalysisModule.hh"
 
 ClassImp(TaConfig);
@@ -117,11 +118,11 @@ vector<VAnalysisModule*> TaConfig::GetAnalysisArray(){
       anAnalysis = new TaLagrangian(i,this);
       fAnalysisArray.push_back(anAnalysis);
     }
-    // if(type=="dithering"){
-    //   cout << "type == dithering " << endl;
-    //   anAnalysis = new TaCorrection(i,this);
-    //   fAnalysisArray.push_back(anAnalysis);
-    // }
+    if(type=="dithering"){
+      cout << "type == dithering " << endl;
+      anAnalysis = new TaCorrection(i,this);
+      fAnalysisArray.push_back(anAnalysis);
+    }
   }
   return fAnalysisArray;
 }

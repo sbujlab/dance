@@ -6,6 +6,7 @@
 #pragma link C++ class TaInput+;
 #pragma link C++ class TaConfig+;
 #pragma link C++ class TaDefinition+;
+#pragma link C++ class TaCorrection+;
 #pragma link C++ class TaSuperCycle+;
 #pragma link C++ class TaAccumulator+;
 #pragma link C++ class TaLagrangian+;
