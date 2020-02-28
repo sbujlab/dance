@@ -63,6 +63,16 @@ void TaChannel::ConstructMiniTreeBranch(TaOutput* fOutput,TString treename){
   fOutput->ConstructStatTreeBranch(treename,fChannelName, mini_stat);
 }
 
+void TaChannel::ConstructSlopeBranch(TaOutput* fOutput,TString treename){
+  Int_t nIV = fPrefactors.size();
+  TString dv_base = GetChannelBaseName();
+  for(int iiv=0;iiv<nIV;iiv++){
+    TString iv_base = fChannels[iiv]->GetChannelBaseName();
+    TString branch_name = dv_base+"_"+iv_base;
+    fOutput->ConstructTreeBranch(treename,branch_name,fPrefactors[iiv]);
+  }
+}
+
 void TaChannel::ConstructSumTreeBranch(TaOutput* fOutput,TString treename){
   fOutput->ConstructStatTreeBranch(treename,fChannelName, run_stat);
 }
@@ -78,4 +88,12 @@ void TaChannel::AccumulateRunSum(){
 }
 void TaChannel::AccumulateMiniSum(){
   fMiniAccumulator.Update(fOutputValue);
+}
+
+TString TaChannel::GetChannelBaseName(){
+  TString base_name = fChannelName;
+  base_name.ReplaceAll("cor_","");
+  base_name.ReplaceAll("asym_","");
+  base_name.ReplaceAll("diff_","");
+  return base_name;
 }

@@ -31,6 +31,7 @@ void TaCorrection::Process(TaOutput *fOutput){
   for(int ich=0;ich<nDV;ich++){
     vector<Double_t> fprefactors = GetSlopeVector( sDVlist[ich]);
     fCorrections[ich]->ConnectChannels(fIndependentVar,fprefactors);
+    fCorrections[ich]->ConstructSlopeBranch(fOutput,"mini_"+tree_name);
   }
   
   for(int imini=0; imini<nMini;imini++){

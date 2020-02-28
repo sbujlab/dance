@@ -31,8 +31,10 @@ public:
 
   void ConstructTreeBranch(TaOutput*);
   void ConstructMiniTreeBranch(TaOutput*,TString);
+  void ConstructSlopeBranch(TaOutput*,TString);
   void ConstructSumTreeBranch(TaOutput*,TString);
 
+  TString GetChannelBaseName();
   Double_t GetEntry(Int_t ie);
   Double_t fOutputValue;  
   Double_t fBranchValue; // input from raw JAPAN output

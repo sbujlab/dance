@@ -28,6 +28,7 @@ void TaRegression::Process(TaOutput *fOutput){
     for(int ich=0;ich<nDV;ich++){
       vector<Double_t> fprefactors = fSlopes[ich];
       fCorrections[ich]->ConnectChannels(fIndependentVar,fprefactors);
+      fCorrections[ich]->ConstructSlopeBranch(fOutput,"mini_"+tree_name);
     }
 
     int istart = minirun_range[imini].first;

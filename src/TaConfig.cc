@@ -272,12 +272,14 @@ TString TaConfig::FindExtRootfile(TString ext_format){
 	  ext_filename = target_dir+name_buff;
 	  cout << " -- Found run range specified matrix: \n -- " 
 	       << ext_filename << endl;
-	  break;
+	  return ext_filename;
 	}
       }
 
     }// end of fileList Loop;
   }
+  cout << " -- Using default input  matrix: \n -- " 
+       << ext_format << endl;
 
-  return ext_filename;
+  return ext_format;
 }
