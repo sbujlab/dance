@@ -1,18 +1,16 @@
 #include "utilities.cc"
-void ProbeCycle_prex(TString,Int_t);
-void ProbeCycle_prex(Int_t);
-
-void ProbeCycle_prex(Int_t slug_number=6){
-  TString runlist = Form("./prex-runlist/simple_list/slug%d.list",slug_number);
-  ProbeCycle_prex(runlist,slug_number);
-}
-void ProbeCycle_prex(TString runlist,Int_t slug_number=9999){
-  vector<Int_t> fRunList = ParseRunList(runlist);
-  map< Int_t, vector<Int_t> > fblmap = GetCycleBlackList();
+void ProbeCycle_prex(Int_t slug_number=39){
+  vector<Int_t> fRunList = LoadRunListBySlug(slug_number);
+  map< Int_t, vector<Int_t> > fblmap = LoadBadCycleList();
   gStyle->SetOptStat(0);
-  TFile *merged_rf = TFile::Open(Form("./dit-coeffs/slug%d.root",slug_number));
-  TTree *sens = (TTree*)merged_rf->Get("sens");
-  
+  TChain *sens = new TChain("sens");
+  Int_t nrun = fRunList.size();
+  for(int i=0;i<nrun;i++){
+    TString filename=Form("./dit-coeffs/prexPrompt_ditcoeffs_%d.root",
+			  fRunList[i]);
+    sens->Add(filename);
+  }
+
   vector<Int_t> coil_index;
   vector<Int_t> coil_set1={1,3,4,6,7,2,5};
   vector<Int_t> coil_set2={3,5,4,6,7,1,2};
@@ -122,6 +120,6 @@ void ProbeCycle_prex(TString runlist,Int_t slug_number=9999){
     (*it_line)->Draw("same");
     it_line++;
   }
-  c1->SaveAs(Form("./pdf/slug%d_dit_cyc.pdf",slug_number));
+  c1->SaveAs(Form("./plots/slug%d_dit_cyc.pdf",slug_number));
 }
 
