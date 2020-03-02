@@ -138,8 +138,42 @@ void AverageSlope(Int_t slug_id=39,TString tree_name="dit_slope1"){
     mapfile.close();
   }
   
+
   // ++++++++++
+  TString rootfile_name = Form("./rootfiles/slug%d_dit_slope_cyclewise_average.root",slug_id);
+  TFile* avg_output = TFile::Open(rootfile_name,"RECREATE");
+  avg_output->cd();
+  TTree* dit_tree = new TTree("dit","dit");
+  vector<Double_t> fSlope_val(nDet*nMon);
+  for(int idet=0;idet<nDet;idet++){
+    for(int imon=0;imon<nMon;imon++){  
+      TString branch_name =Form("%s_%s",
+				det_array[idet].Data(),
+				mon_array[imon].Data());
+      dit_tree->Branch(branch_name,&fSlope_val[idet*nMon+idet]);
+    }
+  }
+  Int_t fRun,fCounter;
+  dit_tree->Branch("run",&fRun);
+  dit_tree->Branch("range",&fCounter);
   
+  for(int isplit=0;isplit<nSplits;isplit++){
+    vector<Int_t> this_list = fRunListArray[isplit];
+    Int_t nrun = this_list.size();
+    fCounter = isplit;
+    for(int i=0;i<nrun;i++){
+      fRun = this_list[i];
+      for(int idet=0;idet<nDet;idet++)
+	for(int imon=0;imon<nMon;imon++)
+	  fSlope_val[idet*nMon+imon] = fAveragedSlope[idet*nMon+imon][isplit];
+      dit_tree->Fill();
+    }
+  }
+  dit_tree->Write();
+  
+  TDirectory *graph_dir = avg_output->GetDirectory("/")->mkdir("graph");
+  TDirectory *canvas_dir = avg_output->GetDirectory("/")->mkdir("canvas");
+  // ++++++++++
   TCanvas *c2 = new TCanvas("c2","c2",1200,600);
   c2->cd();
   c2->SetRightMargin(0.015);
@@ -147,6 +181,7 @@ void AverageSlope(Int_t slug_id=39,TString tree_name="dit_slope1"){
     for(int imon=0;imon<nMon;imon++){
       TMultiGraph *fmg = new TMultiGraph();
       TString title = Form("%s_%s",det_array[idet].Data(),mon_array[imon].Data());
+      fmg->SetName(title);
       TGraph *g_cyclewise = GraphVector(fSlopeValues[idet*nMon+imon],fSlopeXcord[idet*nMon+imon]);
 
       for(int isplit=0;isplit<nSplits;isplit++){
@@ -181,6 +216,11 @@ void AverageSlope(Int_t slug_id=39,TString tree_name="dit_slope1"){
 	line1->Draw("same");
 	t1->Draw("same");
       }
+      graph_dir->cd();
+      fmg->Write();
+      canvas_dir->cd();
+      c2->SetName(title);
+      c2->Write();
       c2->SaveAs(Form("./plots/slug%d_dit_slope_buff_%s.pdf",slug_id,title.Data()));
     }
   }
@@ -188,37 +228,8 @@ void AverageSlope(Int_t slug_id=39,TString tree_name="dit_slope1"){
 		     slug_id,slug_id));
   gSystem->Exec(Form("rm -f ./plots/slug%d_dit_slope_buff_*.pdf ",slug_id));
 
-  // ++++++++++
-  TString rootfile_name = Form("./rootfiles/slug%d_dit_slope_cyclewise_average.root",slug_id);
-  TFile* avg_output = TFile::Open(rootfile_name,"RECREATE");
-  avg_output->cd();
-  TTree* dit_tree = new TTree("dit","dit");
-  vector<Double_t> fSlope_val(nDet*nMon);
-  for(int idet=0;idet<nDet;idet++){
-    for(int imon=0;imon<nMon;imon++){  
-      TString branch_name =Form("%s_%s",
-				det_array[idet].Data(),
-				mon_array[imon].Data());
-      dit_tree->Branch(branch_name,&fSlope_val[idet*nMon+idet]);
-    }
-  }
-  Int_t fRun,fCounter;
-  dit_tree->Branch("run",&fRun);
-  dit_tree->Branch("range",&fCounter);
-  
-  for(int isplit=0;isplit<nSplits;isplit++){
-    vector<Int_t> this_list = fRunListArray[isplit];
-    Int_t nrun = this_list.size();
-    fCounter = isplit;
-    for(int i=0;i<nrun;i++){
-      fRun = this_list[i];
-      for(int idet=0;idet<nDet;idet++)
-	for(int imon=0;imon<nMon;imon++)
-	  fSlope_val[idet*nMon+imon] = fAveragedSlope[idet*nMon+imon][isplit];
-      dit_tree->Fill();
-    }
-  }
-  dit_tree->Write();
+  canvas_dir->Write();
+  graph_dir->Write();
   avg_output->Close();
   cout << " Writing " << rootfile_name << endl;
   // TMatrixD slope_matrix(nDet,nMon);  
