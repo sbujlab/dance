@@ -94,3 +94,13 @@ Bool_t IsBadCycle(map<Int_t,vector<Int_t> > fMap, Int_t cycID, Int_t coil_idx=-1
   else
     return kTRUE;
 }
+
+Bool_t IsGoodCoil(vector<Double_t> flags){
+  auto iter=flags.begin();
+  while(iter!=flags.end()){
+    if( (*iter)>0)
+      return kTRUE;
+    iter++;
+  }
+  return kFALSE;
+}
