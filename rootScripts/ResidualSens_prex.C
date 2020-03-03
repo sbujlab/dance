@@ -1,14 +1,16 @@
 #include "utilities.cc"
 #include "plot_util.cc"
+vector<Double_t> ResidualSens_prex(Int_t slug_number,Int_t kSwitch,Bool_t kPlot);
+
 void ResidualSens_prex(){
   for(int i=1;i<=94;i++){
-    ResidualSens_prex(i,0);
-    ResidualSens_prex(i,1);
-    ResidualSens_prex(i,2);
+    ResidualSens_prex(i,0,kTRUE);
+    ResidualSens_prex(i,1,kTRUE);
+    ResidualSens_prex(i,2,kTRUE);
   }
 }
 
-vector<Double_t> ResidualSens_prex(Int_t slug_number=39,Int_t kSwitch=0,Bool_t kPlot=kTRUE){
+vector<Double_t> ResidualSens_prex(Int_t slug_number,Int_t kSwitch,Bool_t kPlot){
 
   vector<Double_t> fTotalResidual;
   vector<Double_t> norm_counts;
