@@ -150,7 +150,7 @@ void AverageSlope(Int_t slug_id=39,TString tree_name="dit_slope1"){
       TString branch_name =Form("%s_%s",
 				det_array[idet].Data(),
 				mon_array[imon].Data());
-      dit_tree->Branch(branch_name,&fSlope_val[idet*nMon+idet]);
+      dit_tree->Branch(branch_name,&fSlope_val[idet*nMon+imon]);
     }
   }
   Int_t fRun,fCounter;

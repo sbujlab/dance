@@ -104,3 +104,40 @@ Bool_t IsGoodCoil(vector<Double_t> flags){
   }
   return kFALSE;
 }
+
+Double_t compute_residual(Double_t det_val,
+			  vector<Double_t> mon_val, vector<Double_t> fSlope){
+  Int_t nmon = mon_val.size();
+  Double_t correction =0;
+  for(int imon=0;imon<nmon;imon++){
+    correction +=fSlope[imon]*mon_val[imon];
+  }
+  return (det_val -correction);
+}
+
+map<Int_t, vector< vector<Double_t> > > GetSlopeMap(vector<TString> det_array,
+						    vector<TString> mon_array,
+						    TTree *slope_tree){
+
+  map<Int_t, vector<vector<Double_t> > > fMap;
+  Int_t ndet = det_array.size();
+  Int_t nmon = mon_array.size();
+  Int_t nevt = slope_tree->GetEntries();
+  vector<Double_t> fdmy_mon(nmon);
+  vector< vector<Double_t> > fSlope(ndet,fdmy_mon);
+  for(int idet=0;idet<ndet;idet++)
+    for(int imon=0;imon<nmon;imon++){
+      TString chname = Form("%s_%s",det_array[idet].Data(),
+			    mon_array[imon].Data());
+      slope_tree->SetBranchAddress(chname,
+				   &fSlope[idet][imon]);
+    }
+  Int_t fRun;
+  slope_tree->SetBranchAddress("run",&fRun);
+  for(int ievt=0;ievt<nevt;ievt++){
+    slope_tree->GetEntry(ievt);
+    fMap[fRun] = fSlope;
+  }
+  
+  return fMap;
+}
