@@ -1,5 +1,12 @@
 #include "utilities.cc"
 #include "plot_util.cc"
+void ResidualSens_prex(){
+  for(int i=1;i<=94;i++){
+    ResidualSens_prex(i,0);
+    ResidualSens_prex(i,1);
+    ResidualSens_prex(i,2);
+  }
+}
 
 vector<Double_t> ResidualSens_prex(Int_t slug_number=39,Int_t kSwitch=0,Bool_t kPlot=kTRUE){
 
@@ -303,6 +310,17 @@ vector<Double_t> ResidualSens_prex(Int_t slug_number=39,Int_t kSwitch=0,Bool_t k
   } // end of det loop
 
   TString pdf_label;
+  switch(kSwitch){
+  case 0:{
+    pdf_label = "cyclewise_avg";
+    break;}
+  case 1:{
+    pdf_label = "ranges_ovcn";
+    break;}
+  case 2:{
+    pdf_label = "run_ovcn";
+    break; }
+  }
   if(kPlot)
     gSystem->Exec(Form("pdfunite $(ls -rt ./plots/slug%d_dit_res_buff_*.pdf) ./plots/slug%d_dit_res_%s.pdf",slug_number,slug_number,pdf_label.Data()));
 

@@ -1,8 +1,20 @@
 #include "../src/TaAccumulator.cc"
 #include "utilities.cc"
 #include "plot_util.cc"
+void AverageSlope(){
+  TString tree_name;
+  for(int i=1;i<=94;i++){
+    if(i<=76)
+      tree_name ="dit_slope1";
+    else if(i<=94)
+      tree_name ="dit_slope3";
+    else
+      tree_name ="dit_slope1";
 
-void AverageSlope(Int_t slug_id=39,TString tree_name="dit_slope1"){
+    AverageSlope(i,tree_name);
+  }
+}
+void AverageSlope(Int_t slug_id,TString tree_name){
   map<Int_t, vector<Int_t> > fBadCycleMap = LoadBadCycleList();
   vector<Int_t> fRunList = LoadRunListBySlug(slug_id);
   map<Int_t, Int_t> fArmMap = LoadArmMapBySlug(slug_id);

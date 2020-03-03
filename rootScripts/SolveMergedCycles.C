@@ -2,8 +2,11 @@
 #include "TSolver.cc"
 #include "utilities.cc"
 #include "plot_util.cc"
-
-void SolveMergedCycles(Int_t slug_id=39){
+void SolveMergedCycles(){
+  for(int i=1;i<=94;i++)
+    SolveMergedCycles(i);
+}
+void SolveMergedCycles(Int_t slug_id){
   map<Int_t, vector<Int_t> > fBadCycleMap = LoadBadCycleList();
   vector<Int_t> fRunList = LoadRunListBySlug(slug_id);
   map<Int_t, Int_t> fArmMap = LoadArmMapBySlug(slug_id);
