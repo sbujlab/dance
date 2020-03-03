@@ -2,6 +2,7 @@
 #include "TSolver.cc"
 #include "utilities.cc"
 #include "plot_util.cc"
+void SolveMergedCycles(Int_t slug_id);
 void SolveMergedCycles(){
   for(int i=1;i<=94;i++)
     SolveMergedCycles(i);
@@ -63,6 +64,8 @@ void SolveMergedCycles(Int_t slug_id){
   }
 
   Int_t nCycles = sens_tree ->GetEntries();
+  if(nCycles==0)
+    return;
   Double_t cycNumber;
   sens_tree->SetBranchAddress("cycID",&cycNumber);
   Double_t runNumber;
@@ -135,9 +138,9 @@ void SolveMergedCycles(Int_t slug_id){
       if(!IsGoodCoil(mon_err[icoil]))
 	 continue;
       for(int idet=0;idet<nDet;idet++){
-	if(arm_flag==1 && det_array[idet].Contains("r"))
+	if(arm_flag==1 && det_array[idet].Contains("l"))
 	  continue;
-	if(arm_flag==2 && det_array[idet].Contains("l"))
+	if(arm_flag==2 && det_array[idet].Contains("r"))
 	  continue;
 
 	fSolverArrayByRange[split_id][idet].LoadSensitivity(coil_index[icoil],
@@ -152,19 +155,15 @@ void SolveMergedCycles(Int_t slug_id){
   } // end of ievt loop
   
   // ++++++++++ Solving
-  vector<Int_t> fSolverRunlist;
   for(int irun=0;irun<fRunList.size();irun++){
     cout << "run " << fRunList[irun] << endl;
     for(int idet=0;idet<nDet;idet++){
       vector<Double_t> fSlope_buff(nMon,0.0);
-      if(fSolverArrayByRun[irun][idet].SolveMatrix()){
+      if(fSolverArrayByRun[irun][idet].SolveMatrix())
 	fSolverArrayByRun[irun][idet].WriteSolution(fSlope_buff);
-	
-	for(int imon=0;imon<nMon;imon++)
-	  fAveragedSlopeByRun[idet*nMon+imon].push_back( fSlope_buff[imon] );
-	fRunXcord[idet].push_back(fRunCycleList[irun]);
-	fSolverRunlist.push_back(fRunList[irun]);
-      }
+      for(int imon=0;imon<nMon;imon++)
+	fAveragedSlopeByRun[idet*nMon+imon].push_back( fSlope_buff[imon] );
+      fRunXcord[idet].push_back(fRunCycleList[irun]);
     }
   }
 
@@ -184,6 +183,7 @@ void SolveMergedCycles(Int_t slug_id){
     mapfile.open(fullpath.Data());
     cout << "Writing map " << fullpath << endl;
     for(int idet=0;idet<nDet;idet++){
+      cout << det_array[idet] << endl;
       vector<Double_t> fSlope_buff(nMon,0.0);
       if(fSolverArrayByRange[isplit][idet].SolveMatrix())
 	fSolverArrayByRange[isplit][idet].WriteSolution(fSlope_buff);
@@ -205,6 +205,7 @@ void SolveMergedCycles(Int_t slug_id){
 
   // ++++++++++ Writing TTree
   TString rootfile_name = Form("./rootfiles/slug%d_dit_slope_merged_cycle_ovcn.root",slug_id);
+  cout << " Creating " << rootfile_name << endl;
   TFile* avg_output = TFile::Open(rootfile_name,"RECREATE");
   avg_output->cd();
   TTree* dit_range = new TTree("dit1","dit slopes by ranges");
@@ -223,21 +224,23 @@ void SolveMergedCycles(Int_t slug_id){
 
   dit_range->Branch("run",&fRun);
   dit_range->Branch("range",&fCounter);
-  
+  cout << " Filling run-range averaged slopes" << endl;
   for(int isplit=0;isplit<nSplits;isplit++){
     vector<Int_t> this_list = fRunListArray[isplit];
     Int_t nrun = this_list.size();
     fCounter = isplit;
+    for(int idet=0;idet<nDet;idet++)
+      for(int imon=0;imon<nMon;imon++)
+	fSlope_val[idet*nMon+imon] = fAveragedSlopeByRange[idet*nMon+imon][isplit];
+
     for(int i=0;i<nrun;i++){
       fRun = this_list[i];
-      for(int idet=0;idet<nDet;idet++)
-	for(int imon=0;imon<nMon;imon++)
-	  fSlope_val[idet*nMon+imon] = fAveragedSlopeByRange[idet*nMon+imon][isplit];
       dit_range->Fill();
     }
   }
   dit_range->Write();
   /// --- slope by run
+
   for(int idet=0;idet<nDet;idet++){
     for(int imon=0;imon<nMon;imon++){  
       TString branch_name =Form("%s_%s",
@@ -248,9 +251,9 @@ void SolveMergedCycles(Int_t slug_id){
   }
 
   dit_run->Branch("run",&fRun);
-  
-  for(int i=0;i<fSolverRunlist.size();i++){
-    fRun = fSolverRunlist[i];
+
+  cout << " Filling  run-by-run slopes " << endl;
+  for(int i=0;i<fRunList.size();i++){
     for(int idet=0;idet<nDet;idet++)
       for(int imon=0;imon<nMon;imon++)
 	fSlope_val[idet*nMon+imon] = fAveragedSlopeByRun[idet*nMon+imon][i];
@@ -262,14 +265,15 @@ void SolveMergedCycles(Int_t slug_id){
   TDirectory *canvas_dir = avg_output->GetDirectory("/")->mkdir("canvas");
   
   TString input_name = Form("./rootfiles/slug%d_dit_slope_cyclewise_average.root",slug_id);
-
   TFile *cycle_input = TFile::Open(input_name);
   TDirectory *input_dir = cycle_input->GetDirectory("graph");
   
   // ++++++++++ Plots
+  cout << " Making Plots " << endl;
   TCanvas *c2 = new TCanvas("c2","c2",1200,600);
   c2->cd();
   c2->SetRightMargin(0.015);
+  Int_t plot_counter=0;
   for(int idet=0;idet<nDet;idet++){
     for(int imon=0;imon<nMon;imon++){
       TMultiGraph *fmg = new TMultiGraph();
@@ -279,14 +283,18 @@ void SolveMergedCycles(Int_t slug_id){
       for(int isplit=0;isplit<nSplits;isplit++){
 	TGraph *g_avg = GraphAverageSlope(fAveragedSlopeByRange[idet*nMon+imon][isplit],
 					  fSplitXcord[isplit],0.5);
+	if(g_avg==NULL) continue;
 	g_avg->SetLineColor(kRed);
 	g_avg->SetLineStyle(7);
 	fmg->Add(g_avg,"l");
       }
       
       for(int irun=0;irun<fRunXcord[idet].size();irun++){
+	if(fRunXcord[idet][irun].size()==0)
+	  continue;
       	TGraph *g_avg = GraphAverageSlope(fAveragedSlopeByRun[idet*nMon+imon][irun],
       					  fRunXcord[idet][irun],0.5);
+	if(g_avg==NULL) continue;
       	g_avg->SetLineColor(kRed);
       	fmg->Add(g_avg,"l");
       }
@@ -324,10 +332,10 @@ void SolveMergedCycles(Int_t slug_id){
       canvas_dir->cd();
       c2->SetName(title);
       c2->Write();
-      c2->SaveAs(Form("./plots/slug%d_dit_slope_buff_%s.pdf",slug_id,title.Data()));
+      c2->SaveAs(Form("./plots/slug%d_dit_slope_buff_%003d.pdf",slug_id,plot_counter++));
     }
   }
-  gSystem->Exec(Form("pdfunite $(ls -rt ./plots/slug%d_dit_slope_buff_*.pdf) ./plots/slug%d_dit_slope.pdf",
+  gSystem->Exec(Form("pdfunite `ls ./plots/slug%d_dit_slope_buff_*.pdf` ./plots/slug%d_dit_slope.pdf",
 		     slug_id,slug_id));
   gSystem->Exec(Form("rm -f ./plots/slug%d_dit_slope_buff_*.pdf ",slug_id));
 

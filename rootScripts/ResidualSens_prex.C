@@ -184,9 +184,9 @@ vector<Double_t> ResidualSens_prex(Int_t slug_number=39,Int_t kSwitch=0,Bool_t k
 	    Double_t residual = compute_residual(det_val[icoil][idet],mon_val[icoil],
 						 fSlopeRunMap[run][idet]);
 	    
-	    if(arm_flag==1 && det_array[idet].Contains("r"))
+	    if(arm_flag==1 && det_array[idet].Contains("l"))
 	      continue;
-	    if(arm_flag==2 && det_array[idet].Contains("l"))
+	    if(arm_flag==2 && det_array[idet].Contains("r"))
 	      continue;
 
 	    fTotalResidual[idet] += pow(residual,2);

@@ -1,5 +1,10 @@
 #include "utilities.cc"
-void ProbeCycle_prex(Int_t slug_number=39){
+void ProbeCycle_prex(Int_t slug_number);
+void ProbeCycle_prex(){
+  for(int i=1;i<=94;i++)
+    ProbeCycle_prex(i);
+}
+void ProbeCycle_prex(Int_t slug_number){
   vector<Int_t> fRunList = LoadRunListBySlug(slug_number);
   map< Int_t, vector<Int_t> > fblmap = LoadBadCycleList();
   gStyle->SetOptStat(0);

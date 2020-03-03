@@ -1,8 +1,10 @@
 TGraph* GraphAverageSlope(Double_t  fyval,
 			  vector<Double_t> fxval, Double_t ext=0.0){
+  if(fyval==0)
+    return NULL;
   Double_t scale = 1e3; // ppm/um
   const Int_t npt = fxval.size()+2;
-  
+
   Double_t xarr[npt];
   Double_t yarr[npt];
   for(int i=0;i<npt;i++){

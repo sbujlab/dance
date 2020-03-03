@@ -1,6 +1,7 @@
 #include "../src/TaAccumulator.cc"
 #include "utilities.cc"
 #include "plot_util.cc"
+void AverageSlope(Int_t slug_id,TString tree_name);
 void AverageSlope(){
   TString tree_name;
   for(int i=1;i<=94;i++){
@@ -59,6 +60,8 @@ void AverageSlope(Int_t slug_id,TString tree_name){
   }
 
   Int_t nCycles = slope_tree ->GetEntries();
+  if(nCycles==0)
+    return;
   Double_t cycNumber;
   slope_tree->SetBranchAddress("cycID",&cycNumber);
   Double_t runNumber;
@@ -101,9 +104,9 @@ void AverageSlope(Int_t slug_id,TString tree_name){
       continue;
     Int_t arm_flag = fArmMap[runNumber];
     for(int idet=0;idet<nDet;idet++){
-      if(arm_flag==1 && det_array[idet].Contains("r"))
+      if(arm_flag==1 && det_array[idet].Contains("l"))
 	continue;
-      if(arm_flag==2 && det_array[idet].Contains("l"))
+      if(arm_flag==2 && det_array[idet].Contains("r"))
 	continue;
       for(int imon=0;imon<nMon;imon++){
 	if(kFlag[idet*nMon+imon]){
@@ -189,6 +192,7 @@ void AverageSlope(Int_t slug_id,TString tree_name){
   TCanvas *c2 = new TCanvas("c2","c2",1200,600);
   c2->cd();
   c2->SetRightMargin(0.015);
+  Int_t plot_counter=0;
   for(int idet=0;idet<nDet;idet++){
     for(int imon=0;imon<nMon;imon++){
       TMultiGraph *fmg = new TMultiGraph();
@@ -199,6 +203,7 @@ void AverageSlope(Int_t slug_id,TString tree_name){
       for(int isplit=0;isplit<nSplits;isplit++){
 	TGraph *g_avg = GraphAverageSlope(fAveragedSlope[idet*nMon+imon][isplit],
 					  fSplitXcord[isplit],0.5);
+	if(g_avg==NULL) continue;
 	g_avg->SetLineColor(kBlue);
 	fmg->Add(g_avg,"l");
       }
@@ -233,10 +238,10 @@ void AverageSlope(Int_t slug_id,TString tree_name){
       canvas_dir->cd();
       c2->SetName(title);
       c2->Write();
-      c2->SaveAs(Form("./plots/slug%d_dit_slope_buff_%s.pdf",slug_id,title.Data()));
+      c2->SaveAs(Form("./plots/slug%d_dit_slope_buff_%003d.pdf",slug_id,plot_counter++));
     }
   }
-  gSystem->Exec(Form("pdfunite $(ls -rt ./plots/slug%d_dit_slope_buff_*.pdf) ./plots/slug%d_dit_slope_cyclewise_average.pdf",
+  gSystem->Exec(Form("pdfunite `ls ./plots/slug%d_dit_slope_buff_*.pdf` ./plots/slug%d_dit_slope_cyclewise_average.pdf",
 		     slug_id,slug_id));
   gSystem->Exec(Form("rm -f ./plots/slug%d_dit_slope_buff_*.pdf ",slug_id));
 
