@@ -1,6 +1,10 @@
 vector<Int_t> LoadRunListBySlug(Int_t slug_id){
   vector<Int_t> fRet;
-  TString fullpath =Form("prex-runlist/simple_list/slug%d.list",slug_id);
+  TString fullpath;
+  if(slug_id<=94)
+    fullpath =Form("prex-runlist/simple_list/slug%d.list",slug_id);
+  else
+    fullpath =Form("crex-runlist/slug%d.list",slug_id);
   FILE *alist = fopen(fullpath.Data(),"r");
   while(!feof(alist)){
     Int_t run_number=0;
