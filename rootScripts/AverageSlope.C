@@ -9,7 +9,7 @@ void AverageSlope(){
       tree_name ="dit_slope1";
     else if(i<=94)
       tree_name ="dit_slope3";
-    else
+    else 
       tree_name ="dit_slope1";
 
     AverageSlope(i,tree_name);
@@ -254,22 +254,31 @@ void AverageSlope(Int_t slug_id,TString tree_name){
   graph_dir->Write();
   avg_output->Close();
   cout << " Writing " << rootfile_name << endl;
-  // TMatrixD slope_matrix(nDet,nMon);  
-  // for(int idet=0;idet<nDet;idet++)
-  //   for(int imon=0;imon<nMon;imon++)
-  //     slope_matrix[idet][imon] = fAccumulator[idet*nMon+imon].GetMean1();
 
+  //++++++++++++++
+  for(int isplit=0;isplit<nSplits;isplit++){
+    TString range_tag;
+    int low = range_low[isplit];
+    int up = range_up[isplit];
+    if(low==up)
+      range_tag = Form("%d",low);
+    else
+      range_tag = Form("%d-%d",low,up);
 
+    TMatrixD slope_matrix(nDet,nMon);  
+    for(int idet=0;idet<nDet;idet++)
+      for(int imon=0;imon<nMon;imon++)
+	slope_matrix[idet][imon] = fAccumulatorArray[isplit][idet*nMon+imon].GetMean1();
   
-  // TString out_filename = Form("./dit-coeffs/prex_%s_matrix.%d-%d.root",
-  // 			      tree_name.Data(),
-  // 			      fRunList[0],fRunList[nrun-1]);
+    TString out_filename = Form("./dit-coeffs/prex_%s_matrix.%s.root",
+				tree_name.Data(),
+				range_tag.Data());
 
-  // TFile *matrix_output = TFile::Open(out_filename,"RECREATE");
-  // matrix_output->WriteObject(&slope_matrix,"slope_matrix");
-  // matrix_output->WriteObject(&det_array,"dv_array");
-  // matrix_output->WriteObject(&mon_array,"iv_array");
-  // matrix_output->Close();
-
+    TFile *matrix_output = TFile::Open(out_filename,"RECREATE");
+    matrix_output->WriteObject(&slope_matrix,"slope_matrix");
+    matrix_output->WriteObject(&det_array,"dv_array");
+    matrix_output->WriteObject(&mon_array,"iv_array");
+    matrix_output->Close();
+  }
 }
 

@@ -25,8 +25,8 @@ void SolveMergedCycles(Int_t slug_id){
     range_up.push_back(this_list[nrun-1]);
   }
   vector<TString> det_array = {"usl","usr","dsl","dsr"};
-			       // "sam1","sam2","sam3","sam4",
-			       // "sam5","sam6","sam7","sam8"};
+  vector<TString> sam_array={"sam1","sam2","sam3","sam4",
+			     "sam5","sam6","sam7","sam8"};
   vector<TString> at_array={"atl1","atl2","atr1","atr2"};
   vector<TString> mon_array={"bpm4aX","bpm4eX","bpm4aY","bpm4eY"};
   vector<TString> mon1x_array={"bpm1X","bpm4eX","bpm4aY","bpm4eY","bpm12X"};
@@ -42,6 +42,8 @@ void SolveMergedCycles(Int_t slug_id){
 
   if(slug_id>=26)
     det_array.insert(det_array.end(),at_array.begin(),at_array.end());
+  if(slug_id>=100)
+    det_array.insert(det_array.end(),sam_array.begin(),sam_array.end());
 
   Int_t nMon = mon_array.size();
   Int_t nDet = det_array.size();
@@ -346,22 +348,32 @@ void SolveMergedCycles(Int_t slug_id){
   graph_dir->Write();
   avg_output->Close();
   cout << " Writing " << rootfile_name << endl;
-  // TMatrixD slope_matrix(nDet,nMon);  
-  // for(int idet=0;idet<nDet;idet++)
-  //   for(int imon=0;imon<nMon;imon++)
-  //     slope_matrix[idet][imon] = fAccumulator[idet*nMon+imon].GetMean1();
 
+  //++++++++++++++
+  for(int isplit=0;isplit<nSplits;isplit++){
+    TString range_tag;
+    int low = range_low[isplit];
+    int up = range_up[isplit];
+    if(low==up)
+      range_tag = Form("%d",low);
+    else
+      range_tag = Form("%d-%d",low,up);
+
+    TMatrixD slope_matrix(nDet,nMon);  
+    for(int idet=0;idet<nDet;idet++)
+      for(int imon=0;imon<nMon;imon++)
+	slope_matrix[idet][imon] = fAveragedSlopeByRange[idet*nMon+imon][isplit];
+  
+    TString out_filename = Form("./dit-coeffs/prex_ovcn_slope_matrix.%s.root",
+				range_tag.Data());
+
+    TFile *matrix_output = TFile::Open(out_filename,"RECREATE");
+    matrix_output->WriteObject(&slope_matrix,"slope_matrix");
+    matrix_output->WriteObject(&det_array,"dv_array");
+    matrix_output->WriteObject(&mon_array,"iv_array");
+    matrix_output->Close();
+  }
 
   
-  // TString out_filename = Form("./dit-coeffs/prex_%s_matrix.%d-%d.root",
-  // 			      tree_name.Data(),
-  // 			      fRunList[0],fRunList[nrun-1]);
-
-  // TFile *matrix_output = TFile::Open(out_filename,"RECREATE");
-  // matrix_output->WriteObject(&slope_matrix,"slope_matrix");
-  // matrix_output->WriteObject(&det_array,"dv_array");
-  // matrix_output->WriteObject(&mon_array,"iv_array");
-  // matrix_output->Close();
-
 }
 
