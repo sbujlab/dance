@@ -3,7 +3,7 @@
 #include "plot_util.cc"
 
 void MakeSensMatrix(Int_t slug_id){
-
+  
   map<Int_t, vector<Int_t> > fBadCycleMap = LoadBadCycleList();
   vector<Int_t> fRunList = LoadRunListBySlug(slug_id);
   map<Int_t, Int_t> fArmMap = LoadArmMapBySlug(slug_id);
@@ -21,21 +21,26 @@ void MakeSensMatrix(Int_t slug_id){
     range_up.push_back(this_list[nrun-1]);
   }
 
-  vector<TString> device_array{"bpm4aX","bpm4aY","bpm4eX","bpm4eY","bpm1X","bpm12X","bpm11X"};
-
+  vector<TString> device_array{"bpm1X","bpm4aY","bpm4eX","bpm4eY","bpm12X","bpm11X","bpm4aX"};
   vector<TString> det_array{"usl","usr","dsl","dsr"};
-  device_array.insert(device_array.end(),det_array.begin(),det_array.end());  
   vector<TString> at_array={"atl1","atl2","atr1","atr2"};
+  vector<TString> sam_array={"sam1","sam2","sam3","sam4",
+			     "sam5","sam6","sam7","sam8"};
+
+  device_array.insert(device_array.end(),det_array.begin(),det_array.end());  
   if(slug_id>=26)
     device_array.insert(device_array.end(),at_array.begin(),at_array.end());
+  if(slug_id>=100)
+    device_array.insert(device_array.end(),sam_array.begin(),sam_array.end());
 
   vector<TString> coil_array;
-  Int_t nCoil = 7; 
-  for(int icoil=1;icoil<=nCoil;icoil++)
-    coil_array.push_back(Form("bmod_trim%d",icoil));
+
+  Int_t coil_index[]={1,3,4,6,7,2,5};
+  Int_t nCoil = sizeof(coil_index)/sizeof(*coil_index); 
+  for(int icoil=0;icoil<nCoil;icoil++)
+    coil_array.push_back(Form("bmod_trim%d",coil_index[icoil]));
 
   Int_t nDev = device_array.size();
-  TMatrixD sensMatrix(nDev,nCoil);
 
   TChain *sens_tree = new TChain("sens");
   Int_t nrun = fRunList.size();
@@ -44,12 +49,10 @@ void MakeSensMatrix(Int_t slug_id){
 			  fRunList[i]);
     sens_tree->Add(filename);
   }
-
   Int_t nCycles = sens_tree ->GetEntries();
   if(nCycles==0)
     return;
-
-  Int_t cycNumber;
+  Double_t cycNumber;
   sens_tree->SetBranchAddress("cycID",&cycNumber);
   Double_t runNumber;
   sens_tree->SetBranchAddress("run",&runNumber);
@@ -62,108 +65,104 @@ void MakeSensMatrix(Int_t slug_id){
     for(int idev=0;idev<nDev;idev++){
       branch_name = Form("%s_coil%d_err",
 			 device_array[idev].Data(),coil_index[icoil]);
-				 
       sens_tree->SetBranchAddress(branch_name, &sens_err[idev*nCoil+icoil]);
-
       branch_name = Form("%s_coil%d",
 			 device_array[idev].Data(),coil_index[icoil]);
-				 
       sens_tree->SetBranchAddress(branch_name, &sens_val[idev*nCoil+icoil]);
-
     }
   }
+  vector<Int_t> fCycleNumber;
+  vector<TaAccumulator> fAccumulator(nDev*nCoil);
+  vector< vector<TaAccumulator> > fAccumulatorArray(nSplits,fAccumulator);
+  vector< vector<Double_t> > fSplitXcord(nSplits); //[isplit][cycle]
+  vector< vector<Double_t> > fSensValue(nDev*nCoil); //[idev*nMon+imon][cycle]
+  vector< vector<Double_t> > fSensError(nDev*nCoil); //[idev*nMon+imon][cycle] 
+  vector< vector<Double_t> > fSensXcord(nDev*nCoil); //[idev*nMon+imon][cycle]
+  for(int ievt=0;ievt<nCycles;ievt++){
+    sens_tree->GetEntry(ievt);
+    fCycleNumber.push_back(cycNumber);
+    Int_t split_id = fSplitMap[runNumber];
+    fSplitXcord[split_id].push_back(cycNumber);
+    if(IsBadCycle(fBadCycleMap,cycNumber))
+      continue;
 
+    Int_t arm_flag = fArmMap[runNumber];
+      for(int idev=0;idev<nDev;idev++){
 
-  
+	if(arm_flag==1 && device_array[idev].Contains("l"))
+	  continue;
+	if(arm_flag==2 && device_array[idev].Contains("r"))
+	  continue;
+	
+	for(int icoil=0;icoil<nCoil;icoil++){
+	if(sens_err[idev*nCoil+icoil]>0){
+	  fSensValue[idev*nCoil+icoil].push_back(sens_val[idev*nCoil+icoil]);
+	  fSensError[idev*nCoil+icoil].push_back(sens_err[idev*nCoil+icoil]);
+	  fSensXcord[idev*nCoil+icoil].push_back(cycNumber);
+	  fAccumulatorArray[split_id][idev*nCoil+icoil].Update(sens_val[idev*nCoil+icoil]);
+	}
+      }// end of coil loop
+    } // end of device loop
+  } // end of ievt loop
+
+  // ++++++++++
   TCanvas *c1  = new TCanvas("c1","c1",1400,700);
   c1->SetGridx();
   c1->SetGridy();
-  c1->Divide(3,2);
-  gStyle->SetOptFit(1);
-  TF1 *fpol0 = new TF1("fpol0","[0]",0,1e6);
-  for(int imon=0;imon<nMon;imon++){
+  c1->Divide(4,2);
+  c1->Print(Form("./plots/slug%d_dit_sens.pdf[",slug_id),"pdf");
+  for(int idev=0;idev<nDev;idev++){
     for(int icoil=0;icoil<nCoil;icoil++){
       c1->cd(icoil+1);
-      TMultiGraph *mge = new TMultiGraph();
-      TString draw_cmd = mon_array[imon]+"_coil"+coilID[icoil];
-      TString good_cut =draw_cmd+"_err>0";
-      if(fCycleCutMap.find(coilID[icoil])!=fCycleCutMap.end())
-	good_cut+= Form(" && (%s)",fCycleCutMap[coilID[icoil]].Data());
-      Int_t npt =sens_tree->Draw(draw_cmd+":cycID:"+draw_cmd+"_err",
-				 good_cut,"goff");
-      
-      Double_t *sens = sens_tree->GetV1();
-      Double_t *cycID = sens_tree->GetV2();
-      Double_t *sens_err = sens_tree->GetV3();
-      TGraphErrors *ge = new TGraphErrors(npt,cycID,sens,0,sens_err);
-      ge->SetMarkerStyle(20);
-      mge->Add(ge);
-      ge->Fit("fpol0","QR");
-      monCMatrix(imon,icoil)=fpol0->GetParameter(0);
-
-      Int_t npt_bad =sens_tree->Draw(draw_cmd+":cycID:"+draw_cmd+"_err",
-				     "!("+good_cut+")","goff");
-      Double_t *sens_bad = sens_tree->GetV1();
-      Double_t *cycID_bad = sens_tree->GetV2();
-      Double_t *sens_err_bad = sens_tree->GetV3();
-      TGraphErrors *ge_bad = new TGraphErrors(npt_bad,cycID_bad,sens_bad,0,0);
-      ge_bad->SetMarkerColor(kRed);
-      ge_bad->SetMarkerStyle(47);
-      ge_bad->SetMarkerSize(1.5);
-      mge->Add(ge_bad);
-      mge->Draw("AP");
-      mge->SetTitle(Form("%s;cycleID",draw_cmd.Data()));
-    }
-    if(imon==0)
-      c1->Print(Form("./pdf/run%s_sens.pdf[",key.Data()),"pdf");
-    c1->Print(Form("./pdf/run%s_sens.pdf",key.Data()));
-  }
-  for(int idet=0;idet<nDet;idet++){
-    for(int icoil=0;icoil<nCoil;icoil++){
-      c1->cd(icoil+1);
-      TMultiGraph *mge = new TMultiGraph();
-      TString draw_cmd = det_array[idet]+"_coil"+coilID[icoil];
-      TString good_cut = draw_cmd+"_err>0";
-      if(fCycleCutMap.find(coilID[icoil])!=fCycleCutMap.end())
-	good_cut+= Form(" && (%s)",fCycleCutMap[coilID[icoil]].Data());
-      Int_t npt =sens_tree->Draw(draw_cmd+":cycID:"+draw_cmd+"_err",
-				 good_cut,"goff");
-      Double_t *sens = sens_tree->GetV1();
-      Double_t *cycID = sens_tree->GetV2();
-      Double_t *sens_err = sens_tree->GetV3();
-      TGraphErrors *ge = new TGraphErrors(npt,cycID,sens,0,sens_err);
-      ge->SetMarkerStyle(20);
-      mge->Add(ge);
-      ge->Fit("fpol0","QR");
-      detCMatrix(idet,icoil)=fpol0->GetParameter(0);
-      
-      Int_t npt_bad =sens_tree->Draw(draw_cmd+":cycID:"+draw_cmd+"_err",
-				     "!("+good_cut+")","goff");
-      Double_t *sens_bad = sens_tree->GetV1();
-      Double_t *cycID_bad = sens_tree->GetV2();
-      Double_t *sens_err_bad = sens_tree->GetV3();
-      TGraphErrors *ge_bad = new TGraphErrors(npt_bad,cycID_bad,sens_bad,0,0);
-      ge_bad->SetMarkerColor(kRed);
-      ge_bad->SetMarkerStyle(47);
-      ge_bad->SetMarkerSize(1.5);
-      mge->Add(ge_bad);
-      mge->Draw("AP");
-      mge->SetTitle(Form("%s;cycleID",draw_cmd.Data()));
+      double_t scale =1e6;
+      if(device_array[idev].Contains("bpm"))
+	scale =1e3;
+      TMultiGraph *mg = new TMultiGraph();
+      TGraphErrors *g_cyclewise = GraphErrorsVector(fSensValue[idev*nCoil+icoil],fSensError[idev*nCoil+icoil],fSensXcord[idev*nCoil+icoil],scale);
+      mg->Add(g_cyclewise,"P");
+      for(int isplit=0;isplit<nSplits;isplit++){
+	TGraph *g_avg = GraphAverageSlope(fAccumulatorArray[isplit][idev*nCoil+icoil].GetMean1(),fSplitXcord[isplit],0,scale);
+	if(g_avg==NULL) continue;
+	g_avg->SetLineColor(kRed);
+	mg->Add(g_avg,"l");
+      }
+      mg->Draw("A");
+      TString title = device_array[idev]+Form("_coil%d",coil_index[icoil]);
+      if(scale==1e6)
+	title+="(ppm/count)";
+      else if(scale==1e3)
+	title+="(um/count)";
+      mg->SetTitle(title+";cycle ID;sensitivity");
 
     }
-    c1->Print(Form("./pdf/run%s_sens.pdf",key.Data()));
+    c1->Print(Form("./plots/slug%d_dit_sens.pdf",slug_id));
   }
-  c1->Print(Form("./pdf/run%s_sens.pdf]",key.Data()),"pdf");
-  
-  TFile *matrix_output = TFile::Open(Form("./dit-coeffs/prex_sens_matrix.%s.root",key.Data())
-				     ,"RECREATE");
+  c1->Print(Form("./plots/slug%d_dit_sens.pdf]",slug_id),"pdf");
 
-  matrix_output->WriteObject(&detCMatrix,"DetSens");
-  matrix_output->WriteObject(&monCMatrix,"MonSens");
-  matrix_output->WriteObject(&det_array,"det_array");
-  matrix_output->WriteObject(&mon_array,"mon_array");
-  matrix_output->WriteObject(&coil_array,"coil_array");
-  matrix_output->Close();
-  input->Close();    
+  // ++++++++++
+  for(int isplit=0;isplit<nSplits;isplit++){
+    TMatrixD sensMatrix(nDev,nCoil);
+
+    for(int idev=0;idev<nDev;idev++)
+      for(int icoil=0;icoil<nCoil;icoil++)
+	sensMatrix[idev][icoil]=fAccumulatorArray[isplit][idev*nCoil+icoil].GetMean1();
+
+    TString range_tag;
+    int low = range_low[isplit];
+    int up = range_up[isplit];
+    if(low==up)
+      range_tag = Form("%d",low);
+    else
+      range_tag = Form("%d-%d",low,up);
+
+    TString output_filename = Form("./dit-coeffs/prex_sens_matrix.%s.root",range_tag.Data());
+    cout << "Writing output: " << output_filename << endl;
+    TFile *matrix_output = TFile::Open(output_filename,"RECREATE");
+    matrix_output->WriteObject(&sensMatrix,"sens_matrix");
+    matrix_output->WriteObject(&device_array,"dv_array");
+    matrix_output->WriteObject(&coil_array,"coil_array");
+    matrix_output->Close();
+  }
+
 }
 
