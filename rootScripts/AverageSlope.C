@@ -33,9 +33,9 @@ void AverageSlope(Int_t slug_id,TString tree_name){
     range_up.push_back(this_list[nrun-1]);
   }
   vector<TString> det_array = {"usl","usr","dsl","dsr"};
-			       // "sam1","sam2","sam3","sam4",
-			       // "sam5","sam6","sam7","sam8"};
   vector<TString> at_array={"atl1","atl2","atr1","atr2"};
+  vector<TString> sam_array={"sam1","sam2","sam3","sam4",
+			     "sam5","sam6","sam7","sam8"};
   vector<TString> mon_array={"bpm4aX","bpm4eX","bpm4aY","bpm4eY"};
   vector<TString> mon1x_array={"bpm1X","bpm4eX","bpm4aY","bpm4eY","bpm12X"};
   if(slug_id<=3)
@@ -50,6 +50,8 @@ void AverageSlope(Int_t slug_id,TString tree_name){
 
   if(slug_id>=26)
     det_array.insert(det_array.end(),at_array.begin(),at_array.end());
+  if(slug_id>=100)
+    det_array.insert(det_array.end(),sam_array.begin(),sam_array.end());
 
   Int_t nMon = mon_array.size();
   Int_t nDet = det_array.size();

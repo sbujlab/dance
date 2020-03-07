@@ -1,10 +1,7 @@
 vector<Int_t> LoadRunListBySlug(Int_t slug_id){
   vector<Int_t> fRet;
   TString fullpath;
-  if(slug_id<=94)
-    fullpath =Form("prex-runlist/simple_list/slug%d.list",slug_id);
-  else
-    fullpath =Form("crex-runlist/slug%d.list",slug_id);
+  fullpath =Form("prex-runlist/simple_list/slug%d.list",slug_id);
   FILE *alist = fopen(fullpath.Data(),"r");
   while(!feof(alist)){
     Int_t run_number=0;
@@ -36,6 +33,8 @@ map<Int_t,Int_t> LoadArmMapBySlug(Int_t slug_id){
 vector< vector<Int_t> > LoadSplitListBySlug(Int_t slug_id){
   vector< vector< Int_t> > fRet;
   TString filename = "rootScripts/splits.map";
+  if(slug_id>=100) //FIXME for PREX-Transverse
+    filename = "rootScripts/splits_crex.map";
   FILE *input = fopen(filename,"r");
   char list_char[256];
   Int_t myslug;
@@ -59,10 +58,15 @@ vector< vector<Int_t> > LoadSplitListBySlug(Int_t slug_id){
   return fRet;
 }
 
-map<Int_t,vector<Int_t> > LoadBadCycleList(){
+map<Int_t,vector<Int_t> > LoadBadCycleList(Bool_t kCREX=kFALSE){
   map<Int_t,vector<Int_t > > fRet;
   cout << " -- Loading bad supercycle list " << endl;
-  FILE *black_list = fopen("rootScripts/badcycle.list","r");
+  FILE *black_list;
+  if(!kCREX)
+    black_list= fopen("rootScripts/badcycle.list","r");
+  else
+    black_list= fopen("rootScripts/badcycle_crex.list","r");
+
   if(black_list==NULL){
     cerr << " -- Error: bad cycle list is not found " << endl;
     return fRet;
