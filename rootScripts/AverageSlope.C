@@ -1,21 +1,24 @@
 #include "../src/TaAccumulator.cc"
 #include "utilities.cc"
 #include "plot_util.cc"
-void AverageSlope(Int_t slug_id,TString tree_name);
+void AverageSlope(Int_t slug_id,Bool_t kMatrixOutput=kFALSE);
 void AverageSlope(){
   TString tree_name;
   for(int i=1;i<=94;i++){
-    if(i<=76)
-      tree_name ="dit_slope1";
-    else if(i<=94)
-      tree_name ="dit_slope3";
-    else 
-      tree_name ="dit_slope1";
-
-    AverageSlope(i,tree_name);
+    AverageSlope(i);
   }
 }
-void AverageSlope(Int_t slug_id,TString tree_name){
+void AverageSlope(Int_t slug_id,Bool_t kMatrixOutput){
+  TString tree_name;
+  if(slug_id<=76)
+    tree_name ="dit_slope1";
+  else if(slug_id<=94)
+    tree_name ="dit_slope3";
+  else if(slug_id>=143)
+    tree_name ="dit1x_slope1";
+  else 
+    tree_name ="dit_slope1";
+
   map<Int_t, vector<Int_t> > fBadCycleMap = LoadBadCycleList();
   vector<Int_t> fRunList = LoadRunListBySlug(slug_id);
   map<Int_t, Int_t> fArmMap = LoadArmMapBySlug(slug_id);
@@ -256,29 +259,31 @@ void AverageSlope(Int_t slug_id,TString tree_name){
   cout << " Writing " << rootfile_name << endl;
 
   //++++++++++++++
-  for(int isplit=0;isplit<nSplits;isplit++){
-    TString range_tag;
-    int low = range_low[isplit];
-    int up = range_up[isplit];
-    if(low==up)
-      range_tag = Form("%d",low);
-    else
-      range_tag = Form("%d-%d",low,up);
+  if(kMatrixOutput){
+    for(int isplit=0;isplit<nSplits;isplit++){
+      TString range_tag;
+      int low = range_low[isplit];
+      int up = range_up[isplit];
+      if(low==up)
+	range_tag = Form("%d",low);
+      else
+	range_tag = Form("%d-%d",low,up);
 
-    TMatrixD slope_matrix(nDet,nMon);  
-    for(int idet=0;idet<nDet;idet++)
-      for(int imon=0;imon<nMon;imon++)
-	slope_matrix[idet][imon] = fAccumulatorArray[isplit][idet*nMon+imon].GetMean1();
+      TMatrixD slope_matrix(nDet,nMon);  
+      for(int idet=0;idet<nDet;idet++)
+	for(int imon=0;imon<nMon;imon++)
+	  slope_matrix[idet][imon] = fAccumulatorArray[isplit][idet*nMon+imon].GetMean1();
   
-    TString out_filename = Form("./matrices/prex_%s_matrix.%s.root",
-				tree_name.Data(),
-				range_tag.Data());
+      TString out_filename = Form("./matrices/prex_%s_matrix.%s.root",
+				  tree_name.Data(),
+				  range_tag.Data());
 
-    TFile *matrix_output = TFile::Open(out_filename,"RECREATE");
-    matrix_output->WriteObject(&slope_matrix,"slope_matrix");
-    matrix_output->WriteObject(&det_array,"dv_array");
-    matrix_output->WriteObject(&mon_array,"iv_array");
-    matrix_output->Close();
+      TFile *matrix_output = TFile::Open(out_filename,"RECREATE");
+      matrix_output->WriteObject(&slope_matrix,"slope_matrix");
+      matrix_output->WriteObject(&det_array,"dv_array");
+      matrix_output->WriteObject(&mon_array,"iv_array");
+      matrix_output->Close();
+    }
   }
 }
 

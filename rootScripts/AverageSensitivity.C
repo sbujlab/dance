@@ -2,7 +2,7 @@
 #include "utilities.cc"
 #include "plot_util.cc"
 
-void MakeSensMatrix(Int_t slug_id){
+void AverageSensitivity(Int_t slug_id, Bool_t kMatrixOutput=kFALSE){
   
   map<Int_t, vector<Int_t> > fBadCycleMap = LoadBadCycleList();
   vector<Int_t> fRunList = LoadRunListBySlug(slug_id);
@@ -21,8 +21,18 @@ void MakeSensMatrix(Int_t slug_id){
     range_up.push_back(this_list[nrun-1]);
   }
 
-  vector<TString> device_array{"bpm1X","bpm4aY","bpm4eX","bpm4eY","bpm12X","bpm11X","bpm4aX"};
-  vector<TString> det_array{"usl","usr","dsl","dsr"};
+  vector<TString> device_array;
+  vector<TString> prex_set1={"bpm4aX","bpm4aY","bpm4eX","bpm4eY","bpm12X","bpm8X"};
+  vector<TString> prex_set2={"bpm4aX","bpm4aY","bpm4eX","bpm4eY","bpm11X12X","bpm11X","bpm12X","bpm1X","bpm16X"};
+  vector<TString> crex_set={"bpm1X","bpm4aY","bpm4eX","bpm4eY","bpm12X","bpm11X","bpm4aX"};
+  if(slug_id<=3)
+    device_array = prex_set1;
+  else if(slug_id<=94)
+    device_array = prex_set2;
+  else
+    device_array = crex_set;
+  
+  vector<TString> det_array={"usl","usr","dsl","dsr"};
   vector<TString> at_array={"atl1","atl2","atr1","atr2"};
   vector<TString> sam_array={"sam1","sam2","sam3","sam4",
 			     "sam5","sam6","sam7","sam8"};
@@ -85,7 +95,6 @@ void MakeSensMatrix(Int_t slug_id){
     fSplitXcord[split_id].push_back(cycNumber);
     if(IsBadCycle(fBadCycleMap,cycNumber))
       continue;
-
     Int_t arm_flag = fArmMap[runNumber];
       for(int idev=0;idev<nDev;idev++){
 
@@ -140,29 +149,30 @@ void MakeSensMatrix(Int_t slug_id){
   c1->Print(Form("./plots/slug%d_dit_sens.pdf]",slug_id),"pdf");
 
   // ++++++++++
-  for(int isplit=0;isplit<nSplits;isplit++){
-    TMatrixD sensMatrix(nDev,nCoil);
+  if(kMatrixOutput){
+    for(int isplit=0;isplit<nSplits;isplit++){
+      TMatrixD sensMatrix(nDev,nCoil);
 
-    for(int idev=0;idev<nDev;idev++)
-      for(int icoil=0;icoil<nCoil;icoil++)
-	sensMatrix[idev][icoil]=fAccumulatorArray[isplit][idev*nCoil+icoil].GetMean1();
+      for(int idev=0;idev<nDev;idev++)
+	for(int icoil=0;icoil<nCoil;icoil++)
+	  sensMatrix[idev][icoil]=fAccumulatorArray[isplit][idev*nCoil+icoil].GetMean1();
 
-    TString range_tag;
-    int low = range_low[isplit];
-    int up = range_up[isplit];
-    if(low==up)
-      range_tag = Form("%d",low);
-    else
-      range_tag = Form("%d-%d",low,up);
+      TString range_tag;
+      int low = range_low[isplit];
+      int up = range_up[isplit];
+      if(low==up)
+	range_tag = Form("%d",low);
+      else
+	range_tag = Form("%d-%d",low,up);
 
-    TString output_filename = Form("./dit-coeffs/prex_sens_matrix.%s.root",range_tag.Data());
-    cout << "Writing output: " << output_filename << endl;
-    TFile *matrix_output = TFile::Open(output_filename,"RECREATE");
-    matrix_output->WriteObject(&sensMatrix,"sens_matrix");
-    matrix_output->WriteObject(&device_array,"dv_array");
-    matrix_output->WriteObject(&coil_array,"coil_array");
-    matrix_output->Close();
+      TString output_filename = Form("./matrices/prex_sens_matrix.%s.root",range_tag.Data());
+      cout << "Writing output: " << output_filename << endl;
+      TFile *matrix_output = TFile::Open(output_filename,"RECREATE");
+      matrix_output->WriteObject(&sensMatrix,"sens_matrix");
+      matrix_output->WriteObject(&device_array,"dv_array");
+      matrix_output->WriteObject(&coil_array,"coil_array");
+      matrix_output->Close();
+    }
   }
-
 }
 
