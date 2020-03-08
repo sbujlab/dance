@@ -9,4 +9,4 @@ while IFS= read -r line; do
 done < ./prex-runlist/simple_list/slug$1.list
 echo $filelist;
 
-hadd -f ./dit-coeffs/slug$1.root $filelist;
+hadd -f ./ditcoeffs_by_slug/slug$1.root $filelist;
