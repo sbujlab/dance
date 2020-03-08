@@ -209,7 +209,7 @@ void SolveMergedCycles(Int_t slug_id){
   }
 
   // ++++++++++ Writing TTree
-  TString rootfile_name = Form("./rootfiles/slug%d_dit_slope_merged_cycle_ovcn.root",slug_id);
+  TString rootfile_name = Form("./slopes/slug%d_dit_slope_merged_cycle_ovcn.root",slug_id);
   cout << " Creating " << rootfile_name << endl;
   TFile* avg_output = TFile::Open(rootfile_name,"RECREATE");
   avg_output->cd();
@@ -269,7 +269,7 @@ void SolveMergedCycles(Int_t slug_id){
   TDirectory *graph_dir = avg_output->GetDirectory("/")->mkdir("graph");
   TDirectory *canvas_dir = avg_output->GetDirectory("/")->mkdir("canvas");
   
-  TString input_name = Form("./rootfiles/slug%d_dit_slope_cyclewise_average.root",slug_id);
+  TString input_name = Form("./slopes/slug%d_dit_slope_cyclewise_average.root",slug_id);
   TFile *cycle_input = TFile::Open(input_name);
   TDirectory *input_dir = cycle_input->GetDirectory("graph");
   
@@ -364,7 +364,7 @@ void SolveMergedCycles(Int_t slug_id){
       for(int imon=0;imon<nMon;imon++)
 	slope_matrix[idet][imon] = fAveragedSlopeByRange[idet*nMon+imon][isplit];
   
-    TString out_filename = Form("./dit-coeffs/prex_ovcn_slope_matrix.%s.root",
+    TString out_filename = Form("./matrices/prex_ovcn_slope_matrix.%s.root",
 				range_tag.Data());
 
     TFile *matrix_output = TFile::Open(out_filename,"RECREATE");

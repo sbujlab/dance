@@ -73,19 +73,19 @@ vector<Double_t> ResidualSens_prex(Int_t slug_number,Int_t kSwitch,Bool_t kPlot)
   TTree *slope_input;
   switch(kSwitch){
   case 0:{
-    TString filename=Form("rootfiles/slug%d_dit_slope_cyclewise_average.root",slug_number); 
+    TString filename=Form("slopes/slug%d_dit_slope_cyclewise_average.root",slug_number); 
     TFile *input = TFile::Open(filename);
     slope_input = (TTree*)input->Get("dit");
     break;
   }
   case 1:{
-    TString filename=Form("rootfiles/slug%d_dit_slope_merged_cycle_ovcn.root",slug_number); 
+    TString filename=Form("slopes/slug%d_dit_slope_merged_cycle_ovcn.root",slug_number); 
     TFile *input = TFile::Open(filename);
     slope_input = (TTree*)input->Get("dit1");
     break;
   }
   case 2:{
-    TString filename=Form("rootfiles/slug%d_dit_slope_merged_cycle_ovcn.root",slug_number); 
+    TString filename=Form("slopes/slug%d_dit_slope_merged_cycle_ovcn.root",slug_number); 
     TFile *input = TFile::Open(filename);
     slope_input = (TTree*)input->Get("dit2");
     break;

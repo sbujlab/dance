@@ -160,7 +160,7 @@ void AverageSlope(Int_t slug_id,TString tree_name){
   
 
   // ++++++++++
-  TString rootfile_name = Form("./rootfiles/slug%d_dit_slope_cyclewise_average.root",slug_id);
+  TString rootfile_name = Form("./slopes/slug%d_dit_slope_cyclewise_average.root",slug_id);
   TFile* avg_output = TFile::Open(rootfile_name,"RECREATE");
   avg_output->cd();
   TTree* dit_tree = new TTree("dit","dit");
@@ -270,7 +270,7 @@ void AverageSlope(Int_t slug_id,TString tree_name){
       for(int imon=0;imon<nMon;imon++)
 	slope_matrix[idet][imon] = fAccumulatorArray[isplit][idet*nMon+imon].GetMean1();
   
-    TString out_filename = Form("./dit-coeffs/prex_%s_matrix.%s.root",
+    TString out_filename = Form("./matrices/prex_%s_matrix.%s.root",
 				tree_name.Data(),
 				range_tag.Data());
 
