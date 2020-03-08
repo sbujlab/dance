@@ -58,7 +58,7 @@ private:
   Int_t minirun_size;
   vector<pair<Int_t, Int_t> > minirun_range;
   Int_t nEntries;
-  
+  Bool_t kMiniOnly;
   map<TString, TaChannel*> fChannelMap;
   vector<TaChannel*> fChannelArray;
   vector<TString> fChannelNames;

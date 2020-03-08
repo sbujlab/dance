@@ -42,7 +42,8 @@ void TaCorrection::Process(TaOutput *fOutput){
       CalcCombination();
       AccumulateMiniSum();
       AccumulateRunSum();
-      fOutput->FillTree(tree_name);
+      if(!kOutputMiniOnly)
+	fOutput->FillTree(tree_name);
     } // end of  event loop
     UpdateMiniStat();
     fOutput->FillTree("mini_"+tree_name);

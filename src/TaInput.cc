@@ -31,6 +31,11 @@ TaInput::TaInput(TaConfig *aConfig){
   input_path=aConfig->GetConfigParameter("input_path");
   input_prefix=aConfig->GetConfigParameter("input_prefix");
   minirun_size = (aConfig->GetConfigParameter("minirun_size")).Atof();
+  TString output_mini_flag = aConfig->GetConfigParameter("mini_only");
+  if(output_mini_flag=="on")
+    kMiniOnly = kTRUE;
+  else
+    kMiniOnly = kFALSE;
 }
 TaInput::~TaInput(){}
 
@@ -125,16 +130,19 @@ void TaInput::WriteRawChannels(TaOutput *aOutput){
   ConnectChannels();
   
   for(int ich=0;ich<nch;ich++){
-    fChannelArray[ich]->ConstructTreeBranch(aOutput);
+    if(!kMiniOnly)
+      fChannelArray[ich]->ConstructTreeBranch(aOutput);
     fChannelArray[ich]->ConstructMiniTreeBranch(aOutput,"mini");
     fChannelArray[ich]->ConstructSumTreeBranch(aOutput,"sum");
   }
-  fChannelCutFlag->ConstructTreeBranch(aOutput);
+  if(!kMiniOnly)
+    fChannelCutFlag->ConstructTreeBranch(aOutput);
   
   Double_t mini_id=0;
   aOutput->ConstructTreeBranch("sum","run",run_number);
   aOutput->ConstructTreeBranch("mini","mini",mini_id);
-  aOutput->ConstructTreeBranch("mul","mini",mini_id);
+  if(!kMiniOnly)
+    aOutput->ConstructTreeBranch("mul","mini",mini_id);
   Int_t ievt =0;
   Double_t goodCounts=0;
   Int_t mini_start =0;
@@ -159,8 +167,8 @@ void TaInput::WriteRawChannels(TaOutput *aOutput){
 	fChannelArray[ich]->AccumulateMiniSum();
       }
     }
-
-    aOutput->FillTree("mul");
+    if(!kMiniOnly)
+      aOutput->FillTree("mul");
     ievt++;
 
     if(goodCounts==minirun_size){

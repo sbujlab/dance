@@ -11,8 +11,13 @@ void VAnalysisModule::Init(Int_t ana_index,TaConfig *aConfig){
   branch_prefix = aConfig->GetAnalysisParameter(ana_index,"branch_prefix");
   sDVlist = aConfig->GetNameList("dv");
   sIVlist = aConfig->GetNameListByIndex(ana_index,"iv");
-  Int_t nDV = sDVlist.size();
+  TString kOnlyMini = aConfig->GetConfigParameter("mini_only");
+  if(kOnlyMini=="on")
+    kOutputMiniOnly=kTRUE;
+  else
+    kOutputMiniOnly=kFALSE;
 
+  Int_t nDV = sDVlist.size();
   for(int ich=0;ich<nDV;ich++){
     TString myName = sDVlist[ich];
     TaChannel *aOutputChannel = new TaChannel(tree_name,branch_prefix+myName);
@@ -49,11 +54,14 @@ void VAnalysisModule::LoadInput(TaInput *aInput){
 void VAnalysisModule::ConstructOutputs(TaOutput* fOutput){
   Int_t nDV = sDVlist.size();
   for(int ich=0;ich<nDV;ich++){
-    fOutputChannels[ich]->ConstructTreeBranch(fOutput);
+    if(!kOutputMiniOnly){
+      fOutputChannels[ich]->ConstructTreeBranch(fOutput);
+      fCorrections[ich]->ConstructTreeBranch(fOutput);
+    }
+
     fOutputChannels[ich]->ConstructMiniTreeBranch(fOutput,"mini_"+tree_name);
     fOutputChannels[ich]->ConstructSumTreeBranch(fOutput,"sum_"+tree_name);
 
-    fCorrections[ich]->ConstructTreeBranch(fOutput);
     fCorrections[ich]->ConstructMiniTreeBranch(fOutput,"mini_"+tree_name);
     fCorrections[ich]->ConstructSumTreeBranch(fOutput,"sum_"+tree_name);
   }
