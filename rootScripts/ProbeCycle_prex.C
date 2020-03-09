@@ -6,7 +6,11 @@ void ProbeCycle_prex(){
 }
 void ProbeCycle_prex(Int_t slug_number){
   vector<Int_t> fRunList = LoadRunListBySlug(slug_number);
-  map< Int_t, vector<Int_t> > fblmap = LoadBadCycleList();
+
+  Bool_t kCrex = kFALSE;
+  if(slug_number>=100 && slug_number<500)
+    kCrex = kTRUE;
+  map< Int_t, vector<Int_t> > fblmap = LoadBadCycleList(kCrex);
   gStyle->SetOptStat(0);
   TChain *sens = new TChain("sens");
   Int_t nrun = fRunList.size();

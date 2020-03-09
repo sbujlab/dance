@@ -19,7 +19,11 @@ void AverageSlope(Int_t slug_id,Bool_t kMatrixOutput){
   else 
     tree_name ="dit_slope1";
 
-  map<Int_t, vector<Int_t> > fBadCycleMap = LoadBadCycleList();
+  Bool_t kCrex = kFALSE;
+  if(slug_id>=100 && slug_id<500)
+    kCrex = kTRUE;
+  map<Int_t, vector<Int_t> > fBadCycleMap = LoadBadCycleList(kCrex);
+
   vector<Int_t> fRunList = LoadRunListBySlug(slug_id);
   map<Int_t, Int_t> fArmMap = LoadArmMapBySlug(slug_id);
   vector< vector<Int_t> > fRunListArray = LoadSplitListBySlug(slug_id);
