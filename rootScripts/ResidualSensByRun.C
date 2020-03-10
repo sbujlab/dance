@@ -227,6 +227,9 @@ void ResidualSensByRun(Int_t slug_number,Int_t kSwitch, Bool_t kPlot){
       } // end of coil loop
     }// end of if kMatch
   } // end of event loop
+  output->cd();
+  residual_tree->Write();
+  output->Close();
 
   gStyle->SetTitleSize(0.3);
   gStyle->SetLabelSize(0.07);
