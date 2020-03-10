@@ -3,8 +3,10 @@
 void ResidualSensByCycle(Int_t slug_number,Bool_t kOverConstraint);
 
 void ResidualSensByCycle(){
-  for(int i=1;i<=94;i++)
+  for(int i=1;i<=94;i++){
     ResidualSensByCycle(i,kFALSE);
+    ResidualSensByCycle(i,kTRUE);
+  }
 }
 
 void ResidualSensByCycle(Int_t slug_number ,Bool_t kOverConstraint){
