@@ -288,10 +288,14 @@ void SolveMergedCycles(Int_t slug_id,Bool_t kMatrixOutput){
   Int_t plot_counter=0;
   for(int idet=0;idet<nDet;idet++){
     for(int imon=0;imon<nMon;imon++){
+      c2->Clear("D");
+      TLegend leg(0.985,0.90,0.75,0.65);
+      Bool_t kSlugDone=kFALSE;
+      Bool_t kRunDone=kFALSE;
+      Bool_t k5x5SlugDone=kFALSE;
       TMultiGraph *fmg = new TMultiGraph();
       TString title = Form("%s_%s",det_array[idet].Data(),mon_array[imon].Data());
       fmg->SetName(title);
-
       for(int isplit=0;isplit<nSplits;isplit++){
 	TGraph *g_avg = GraphAverageSlope(fAveragedSlopeByRange[idet*nMon+imon][isplit],
 					  fSplitXcord[isplit],0.5);
@@ -299,6 +303,10 @@ void SolveMergedCycles(Int_t slug_id,Bool_t kMatrixOutput){
 	g_avg->SetLineColor(kRed);
 	g_avg->SetLineStyle(7);
 	fmg->Add(g_avg,"l");
+	if(!kSlugDone){
+	  leg.AddEntry(g_avg,"over constraint slug avg","l");
+	  kSlugDone=kTRUE;
+	}
       }
       
       for(int irun=0;irun<fRunXcord[idet].size();irun++){
@@ -309,11 +317,28 @@ void SolveMergedCycles(Int_t slug_id,Bool_t kMatrixOutput){
 	if(g_avg==NULL) continue;
       	g_avg->SetLineColor(kRed);
       	fmg->Add(g_avg,"l");
+	if(!kRunDone){
+	  leg.AddEntry(g_avg,"over constraint run avg","l");
+	  kRunDone=kTRUE;
+	}
       }
 
       TMultiGraph* cycle_mg = (TMultiGraph*)input_dir->Get(title);
       fmg->Add(cycle_mg);
+      TIter next(cycle_mg->GetListOfGraphs());
+      TGraph *gint;
       
+      while ( (gint=(TGraph*)next()) ){
+	if((gint->GetMarkerStyle())==47 && gint->GetMarkerColor()==kBlue)
+	  leg.AddEntry(gint,"5x5 cyclewise","p");
+	if((gint->GetLineStyle())==1 && gint->GetLineColor()==kBlue){
+	  if(!k5x5SlugDone){
+	    leg.AddEntry(gint,"5x5 slug avg.","l");
+	    k5x5SlugDone=kTRUE;
+	  }	  
+	}
+	  
+      }
       fmg->Draw("A");
       fmg->SetTitle(title);
       fmg->GetYaxis()->SetTitle("ppm/um");
@@ -326,6 +351,8 @@ void SolveMergedCycles(Int_t slug_id,Bool_t kMatrixOutput){
 
       Double_t ymin = fmg->GetYaxis()->GetXmin();
       Double_t ymax = fmg->GetYaxis()->GetXmax();
+      fmg->GetYaxis()->SetRangeUser(ymin, ymax+0.5*(ymax-ymin));
+      ymax = ymax+0.5*(ymax-ymin);
       Int_t ntext = fRunLabelXcord.size();
       for(int i=0;i<ntext;i++){
 	TText *t1 = new TText(fRunLabelXcord[i]-0.5,ymax,Form("%d",fRunLabel[i]));
@@ -339,6 +366,8 @@ void SolveMergedCycles(Int_t slug_id,Bool_t kMatrixOutput){
 	line1->Draw("same");
 	t1->Draw("same");
       }
+      leg.Draw("same");
+
       graph_dir->cd();
       fmg->Write();
       canvas_dir->cd();
