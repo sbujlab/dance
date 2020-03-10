@@ -116,7 +116,7 @@ void SolveMergedCycles(Int_t slug_id,Bool_t kMatrixOutput){
   fProtoSolver.SetCondition(required_index);
   vector<TSolver> fSolver(nDet,fProtoSolver);
   vector< vector<TSolver> > fSolverArrayByRange(nSplits,fSolver);
-  vector< vector<TSolver> > fSolverArrayByRun(fRunList.size(),fSolver);
+  vector< vector<TSolver> > fSolverArrayByRun;//(fRunList.size(),fSolver);
   vector<Int_t> fRunLabel;
   vector<Int_t> fCycleNumber;
   vector<Double_t> fRunLabelXcord;
@@ -132,10 +132,12 @@ void SolveMergedCycles(Int_t slug_id,Bool_t kMatrixOutput){
     sens_tree->GetEntry(ievt);
     fCycleNumber.push_back(cycNumber);
     if(last_runnumber!=runNumber){
+      cout << "reading run " <<runNumber <<endl;
       last_runnumber = runNumber;
       fRunLabel.push_back(runNumber);
       fRunLabelXcord.push_back(ievt);
       run_count++;
+      fSolverArrayByRun.push_back(fSolver);
     }
     Int_t split_id = fSplitMap[runNumber];
     fSplitXcord[split_id].push_back(ievt);
@@ -164,8 +166,8 @@ void SolveMergedCycles(Int_t slug_id,Bool_t kMatrixOutput){
   } // end of ievt loop
   
   // ++++++++++ Solving
-  for(int irun=0;irun<fRunList.size();irun++){
-    cout << "run " << fRunList[irun] << endl;
+  for(int irun=0;irun<run_count;irun++){
+    cout << "run " <<  fRunLabel[irun]<< endl;
     for(int idet=0;idet<nDet;idet++){
       vector<Double_t> fSlope_buff(nMon,0.0);
       if(fSolverArrayByRun[irun][idet].SolveMatrix())
@@ -262,8 +264,8 @@ void SolveMergedCycles(Int_t slug_id,Bool_t kMatrixOutput){
   dit_run->Branch("run",&fRun);
 
   cout << " Filling  run-by-run slopes " << endl;
-  for(int i=0;i<fRunList.size();i++){
-    fRun = fRunList[i];
+  for(int i=0;i<run_count;i++){
+    fRun = fRunLabel[i];
     for(int idet=0;idet<nDet;idet++)
       for(int imon=0;imon<nMon;imon++)
 	fSlope_val[idet*nMon+imon] = fAveragedSlopeByRun[idet*nMon+imon][i];

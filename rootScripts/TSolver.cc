@@ -6,12 +6,13 @@ TSolver::TSolver(){
 
 Bool_t TSolver::SolveMatrix(){
   cout << " -- Using matrix solution " << endl;
+  cout << " -- " << fCoilIndex.size() << " coils are loaded " << endl;
   if(!IsCoilSufficient()){
     cerr << " -- Array of Coil is not sufficient " << endl;
     kGoodSolution = kFALSE;
     return kFALSE ;
-  }else
-    cout << " -- " << fCoilIndex.size() << " coils are loaded " << endl;
+  }
+
   
   const Int_t nMon = fMonArray[0].size();
   cout << " -- " << nMon << " monitors are used " << endl;

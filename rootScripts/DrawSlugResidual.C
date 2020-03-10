@@ -92,7 +92,7 @@ void DrawSlugResidual(Bool_t kCyclewise){
   TCanvas *c1 = new TCanvas("c1","c1",1200,600);
   c1->cd();
   mg_usl->Draw("A");
-  mg_usl->SetTitle("usl residual sensitiviy;Slug; ppm/count");
+  mg_usl->SetTitle("usl residual sensitivity;Slug; ppm/count");
   double ymax= mg_usl->GetYaxis()->GetXmax();
   double ymin=mg_usl->GetYaxis()->GetXmin();
   mg_usl->GetYaxis()->SetRangeUser(ymin,ymax+0.2*(ymax-ymin));
@@ -100,7 +100,7 @@ void DrawSlugResidual(Bool_t kCyclewise){
   TCanvas *c2 = new TCanvas("c2","c2",1200,600);
   c2->cd();
   mg_usr->Draw("A");
-  mg_usr->SetTitle("usr residual sensitiviy;Slug; ppm/count");
+  mg_usr->SetTitle("usr residual sensitivity;Slug; ppm/count");
   ymax= mg_usr->GetYaxis()->GetXmax();
   ymin=mg_usr->GetYaxis()->GetXmin();
   mg_usr->GetYaxis()->SetRangeUser(ymin,ymax+0.2*(ymax-ymin));

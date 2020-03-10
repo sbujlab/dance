@@ -4,9 +4,9 @@ void ResidualSensByRun(Int_t slug_number,Int_t kSwitch);
 
 void ResidualSensByRun(){
   for(int i=1;i<=94;i++){
-    ResidualSensByRun(i,0);
-    ResidualSensByRun(i,1);
-    ResidualSensByRun(i,2);
+    ResidualSensByRun(i,0); // avg.  5x4
+    ResidualSensByRun(i,1); // slug avg. ovcn
+    ResidualSensByRun(i,2); // run avg. ovcn
   }
 }
 
