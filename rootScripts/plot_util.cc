@@ -27,8 +27,7 @@ TGraph* GraphAverageSlope(Double_t  fyval,
 }
 
 TGraph* GraphVector(vector<Double_t> fyval,
-		    vector<Double_t> fxval){
-  Double_t scale = 1e3; // ppm/um
+		    vector<Double_t> fxval,Double_t scale=1e3){
   const Int_t npt = fxval.size();
   Double_t xarr[npt];
   Double_t yarr[npt];

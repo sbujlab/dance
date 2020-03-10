@@ -1,8 +1,12 @@
 #include "../src/TaAccumulator.cc"
 #include "utilities.cc"
 #include "plot_util.cc"
-
-void AverageSensitivity(Int_t slug_id, Bool_t kMatrixOutput=kFALSE){
+void AverageSensitivity(Int_t slug_id, Bool_t kMatrixOutput=kFALSE);
+void AverageSensitivity(){
+  for(int i=1;i<=94;i++)
+    AverageSensitivity(i,kFALSE);
+}
+void AverageSensitivity(Int_t slug_id, Bool_t kMatrixOutput){
   Bool_t kCrex = kFALSE;
   if(slug_id>=100 && slug_id<500)
     kCrex = kTRUE;

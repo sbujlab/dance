@@ -263,6 +263,7 @@ void SolveMergedCycles(Int_t slug_id,Bool_t kMatrixOutput){
 
   cout << " Filling  run-by-run slopes " << endl;
   for(int i=0;i<fRunList.size();i++){
+    fRun = fRunList[i];
     for(int idet=0;idet<nDet;idet++)
       for(int imon=0;imon<nMon;imon++)
 	fSlope_val[idet*nMon+imon] = fAveragedSlopeByRun[idet*nMon+imon][i];
