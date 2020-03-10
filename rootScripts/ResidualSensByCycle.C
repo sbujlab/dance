@@ -1,13 +1,13 @@
 #include "utilities.cc"
 #include "plot_util.cc"
-void ResidualSensByCycle(Int_t slug_number,Bool_t kPlot);
+void ResidualSensByCycle(Int_t slug_number,Bool_t kOverConstraint);
 
 void ResidualSensByCycle(){
   for(int i=1;i<=94;i++)
-    ResidualSensByCycle(i,kTRUE);
+    ResidualSensByCycle(i,kFALSE);
 }
 
-void ResidualSensByCycle(Int_t slug_number ,Bool_t kPlot){
+void ResidualSensByCycle(Int_t slug_number ,Bool_t kOverConstraint){
 
   map<Int_t,Int_t> fArmMap = LoadArmMapBySlug(slug_number);
   vector<Int_t> fRunList = LoadRunListBySlug(slug_number);
@@ -20,7 +20,9 @@ void ResidualSensByCycle(Int_t slug_number ,Bool_t kPlot){
     tree_name ="dit_slope3";
   else
     tree_name ="dit_slope1";
-
+  if(kOverConstraint)
+    tree_name="dit_slope_lsq";
+  
   TChain *slope_tree = new TChain(tree_name);
   Int_t nrun = fRunList.size();
   for(int i=0;i<nrun;i++){
@@ -116,7 +118,14 @@ void ResidualSensByCycle(Int_t slug_number ,Bool_t kPlot){
       sens->SetBranchAddress(flag_name,&slope_flag[idet][imon]);
     }
   }
-  TFile *output = TFile::Open(Form("./residuals/slug%d_5x5_by_cycle.root",slug_number),"RECREATE");
+
+  TString pdf_label;
+  if(kOverConstraint)
+    pdf_label="ovcn_by_cycle";
+  else
+    pdf_label="5x5_by_cycle";
+
+  TFile *output = TFile::Open(Form("./residuals/slug%d_%s.root",slug_number,pdf_label.Data()),"RECREATE");
   TTree *residual_tree = new TTree("res","Residual Sensitivity Tree");
   vector<Double_t> fRes_ptr(ndet);
   vector<Double_t> fResSq_ptr(ndet);
@@ -285,14 +294,13 @@ void ResidualSensByCycle(Int_t slug_number ,Bool_t kPlot){
       p3->cd();
       hPull[idet*ncoil+icoil].Draw();
       hPull[idet*ncoil+icoil].GetXaxis()->SetTitle("residual (ppm/count)");
-      if(kPlot)
-	c2->SaveAs(Form("./plots/slug%d_dit_res_buff_%003d.pdf",slug_number,page_counter++));
+
+      c2->SaveAs(Form("./plots/slug%d_dit_res_buff_%003d.pdf",slug_number,page_counter++));
     } // end of coil loop
   } // end of det loop
-
-  TString pdf_label="5x5_by_cycle";
-  if(kPlot)
-    gSystem->Exec(Form("pdfunite $(ls ./plots/slug%d_dit_res_buff_*.pdf) ./plots/slug%d_dit_res_%s.pdf",slug_number,slug_number,pdf_label.Data()));
+  
+  
+  gSystem->Exec(Form("pdfunite $(ls ./plots/slug%d_dit_res_buff_*.pdf) ./plots/slug%d_dit_res_%s.pdf",slug_number,slug_number,pdf_label.Data()));
 
   gSystem->Exec(Form("rm -f ./plots/slug%d_dit_res_buff_*.pdf ",slug_number));
 

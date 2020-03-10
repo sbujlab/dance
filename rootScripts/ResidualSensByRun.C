@@ -1,16 +1,16 @@
 #include "utilities.cc"
 #include "plot_util.cc"
-void ResidualSensByRun(Int_t slug_number,Int_t kSwitch, Bool_t kPlot);
+void ResidualSensByRun(Int_t slug_number,Int_t kSwitch);
 
 void ResidualSensByRun(){
   for(int i=1;i<=94;i++){
-    ResidualSensByRun(i,0,kTRUE);
-    ResidualSensByRun(i,1,kTRUE);
-    ResidualSensByRun(i,2,kTRUE);
+    ResidualSensByRun(i,0);
+    ResidualSensByRun(i,1);
+    ResidualSensByRun(i,2);
   }
 }
 
-void ResidualSensByRun(Int_t slug_number,Int_t kSwitch, Bool_t kPlot){
+void ResidualSensByRun(Int_t slug_number,Int_t kSwitch){
 
   map<Int_t,Int_t> fArmMap = LoadArmMapBySlug(slug_number);
   vector<Int_t> fRunList = LoadRunListBySlug(slug_number);
@@ -324,13 +324,13 @@ void ResidualSensByRun(Int_t slug_number,Int_t kSwitch, Bool_t kPlot){
       p3->cd();
       hPull[idet*ncoil+icoil].Draw();
       hPull[idet*ncoil+icoil].GetXaxis()->SetTitle("residual (ppm/count)");
-      if(kPlot)
-	c2->SaveAs(Form("./plots/slug%d_dit_res_buff_%003d.pdf",slug_number,page_counter++));
+
+      c2->SaveAs(Form("./plots/slug%d_dit_res_buff_%003d.pdf",slug_number,page_counter++));
     } // end of coil loop
   } // end of det loop
 
-  if(kPlot)
-    gSystem->Exec(Form("pdfunite $(ls ./plots/slug%d_dit_res_buff_*.pdf) ./plots/slug%d_dit_res_%s.pdf",slug_number,slug_number,pdf_label.Data()));
+
+  gSystem->Exec(Form("pdfunite $(ls ./plots/slug%d_dit_res_buff_*.pdf) ./plots/slug%d_dit_res_%s.pdf",slug_number,slug_number,pdf_label.Data()));
   gSystem->Exec(Form("rm -f ./plots/slug%d_dit_res_buff_*.pdf ",slug_number));
 
 }
