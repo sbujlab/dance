@@ -33,7 +33,7 @@ map<Int_t,Int_t> LoadArmMapBySlug(Int_t slug_id){
 vector< vector<Int_t> > LoadSplitListBySlug(Int_t slug_id){
   vector< vector< Int_t> > fRet;
   TString filename = "rootScripts/splits.map";
-  if(slug_id>=100) //FIXME for PREX-Transverse
+  if(slug_id>=100 && slug_id!=501) 
     filename = "rootScripts/splits_crex.map";
   FILE *input = fopen(filename,"r");
   char list_char[256];

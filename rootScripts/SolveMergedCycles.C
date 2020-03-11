@@ -36,17 +36,17 @@ void SolveMergedCycles(Int_t slug_id,Bool_t kMatrixOutput){
   vector<TString> mon1x_array={"bpm1X","bpm4eX","bpm4aY","bpm4eY","bpm12X"};
   if(slug_id<=3)
     mon_array.push_back("bpm12X");
-  else if(slug_id<=94)
+  else if(slug_id<=94 || slug_id==501)
     mon_array.push_back("bpm11X12X");
   else
     mon_array.push_back("bpm12X");
 
-  if(slug_id>=143)
+  if(slug_id>=143 && slug_id!=501)
     mon_array=mon1x_array;
 
   if(slug_id>=26)
     det_array.insert(det_array.end(),at_array.begin(),at_array.end());
-  if(slug_id>=100)
+  if(slug_id>=100 && slug_id!=501)
     det_array.insert(det_array.end(),sam_array.begin(),sam_array.end());
 
   Int_t nMon = mon_array.size();

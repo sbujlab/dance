@@ -18,7 +18,7 @@ void ResidualSensByCycle(Int_t slug_number ,Bool_t kOverConstraint){
   TString tree_name;
   if(slug_number<=76)
     tree_name ="dit_slope1";
-  else if(slug_number<=94)
+  else if(slug_number<=94 || slug_number==501)
     tree_name ="dit_slope3";
   else
     tree_name ="dit_slope1";
@@ -47,7 +47,7 @@ void ResidualSensByCycle(Int_t slug_number ,Bool_t kOverConstraint){
 
   if(slug_number<=76)
     coil_index = coil_set1;
-  else if(slug_number<=94)
+  else if(slug_number<=94 || slug_number==501)
     coil_index = coil_set2;
   else
     coil_index = coil_set1;
@@ -58,7 +58,7 @@ void ResidualSensByCycle(Int_t slug_number ,Bool_t kOverConstraint){
 
   if(slug_number<=3)
     mon_array = mon_set2;
-  else if(slug_number<=94)
+  else if(slug_number<=94 || slug_number==501)
     mon_array = mon_set1;
   else
     mon_array = mon_set2;

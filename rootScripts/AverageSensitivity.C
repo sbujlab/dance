@@ -33,7 +33,7 @@ void AverageSensitivity(Int_t slug_id, Bool_t kMatrixOutput){
   vector<TString> crex_set={"bpm1X","bpm4aY","bpm4eX","bpm4eY","bpm12X","bpm11X","bpm4aX"};
   if(slug_id<=3)
     device_array = prex_set1;
-  else if(slug_id<=94)
+  else if(slug_id<=94 || slug_id==501)
     device_array = prex_set2;
   else
     device_array = crex_set;

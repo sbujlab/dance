@@ -12,7 +12,7 @@ void AverageSlope(Int_t slug_id,Bool_t kMatrixOutput){
   TString tree_name;
   if(slug_id<=76)
     tree_name ="dit_slope1";
-  else if(slug_id<=94)
+  else if(slug_id<=94 || slug_id==501)
     tree_name ="dit_slope3";
   else if(slug_id>=143)
     tree_name ="dit1x_slope1";
@@ -47,12 +47,12 @@ void AverageSlope(Int_t slug_id,Bool_t kMatrixOutput){
   vector<TString> mon1x_array={"bpm1X","bpm4eX","bpm4aY","bpm4eY","bpm12X"};
   if(slug_id<=3)
     mon_array.push_back("bpm12X");
-  else if(slug_id<=94)
+  else if(slug_id<=94 || slug_id==501)
     mon_array.push_back("bpm11X12X");
   else
     mon_array.push_back("bpm12X");
 
-  if(slug_id>=143)
+  if(slug_id>=143 && kCrex)
     mon_array=mon1x_array;
 
   if(slug_id>=26)
