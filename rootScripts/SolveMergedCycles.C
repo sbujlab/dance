@@ -166,7 +166,7 @@ void SolveMergedCycles(Int_t slug_id,Bool_t kMatrixOutput){
   } // end of ievt loop
   
   // ++++++++++ Solving
-  for(int irun=0;irun<run_count;irun++){
+  for(int irun=0;irun<=run_count;irun++){
     cout << "run " <<  fRunLabel[irun]<< endl;
     for(int idet=0;idet<nDet;idet++){
       vector<Double_t> fSlope_buff(nMon,0.0);
@@ -264,7 +264,7 @@ void SolveMergedCycles(Int_t slug_id,Bool_t kMatrixOutput){
   dit_run->Branch("run",&fRun);
 
   cout << " Filling  run-by-run slopes " << endl;
-  for(int i=0;i<run_count;i++){
+  for(int i=0;i<=run_count;i++){
     fRun = fRunLabel[i];
     for(int idet=0;idet<nDet;idet++)
       for(int imon=0;imon<nMon;imon++)
