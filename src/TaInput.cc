@@ -27,6 +27,7 @@ TaInput::TaInput(TaConfig *aConfig){
     run_dot_seg.Remove(0,pos_dot+1);
     seg_number = run_dot_seg.Atoi();
     aConfig->SetRunNumber(run_number);
+    aConfig->SetSegNumber(seg_number);
   }
   input_path=aConfig->GetConfigParameter("input_path");
   input_prefix=aConfig->GetConfigParameter("input_prefix");

@@ -63,12 +63,13 @@ public:
     }
     return fRet;
   };
-  
+  inline Int_t GetSegNumber() const { return seg_number;};
   inline Int_t GetRunNumber() const { return run_number;};
   inline TString GetInputName() const { return input_name;};
   inline void SetInputName(TString str){input_name=str;};
   inline void SetRunNumber(Int_t i){run_number=i;};
-  
+  inline void SetSegNumber(Int_t i){seg_number=i;};
+
   vector<VAnalysisModule*> GetAnalysisArray();
   TaDefinition* ParseChannelDefinition(TString );
   Bool_t isKeyWord(TString input );
@@ -81,6 +82,7 @@ private:
 
   TString configName;
   Int_t run_number;
+  Int_t seg_number;
   TString input_name;
 
   map< TString, TString> fConfigParameters;
