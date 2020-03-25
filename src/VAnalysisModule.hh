@@ -29,7 +29,7 @@ public:
   void UpdateRunStat();
 
 protected:
-
+  Bool_t kOutputMiniOnly;
   TaOutput *fOutput;
   vector<pair<Int_t,Int_t> > minirun_range;
   vector<TaChannel*> fDependentVar;

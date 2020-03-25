@@ -27,10 +27,16 @@ TaInput::TaInput(TaConfig *aConfig){
     run_dot_seg.Remove(0,pos_dot+1);
     seg_number = run_dot_seg.Atoi();
     aConfig->SetRunNumber(run_number);
+    aConfig->SetSegNumber(seg_number);
   }
   input_path=aConfig->GetConfigParameter("input_path");
   input_prefix=aConfig->GetConfigParameter("input_prefix");
   minirun_size = (aConfig->GetConfigParameter("minirun_size")).Atof();
+  TString output_mini_flag = aConfig->GetConfigParameter("mini_only");
+  if(output_mini_flag=="on")
+    kMiniOnly = kTRUE;
+  else
+    kMiniOnly = kFALSE;
 }
 TaInput::~TaInput(){}
 
@@ -60,6 +66,7 @@ Bool_t TaInput::LoadROOTFile(){
   }
 
   evt_tree = (TTree*)input_file->Get("evt");
+  bmw_tree = (TTree*)input_file->Get("evt_bmw");
   mul_tree = (TTree*)input_file->Get("mul");
   mulc_tree = (TTree*)input_file->Get("mulc");
   if(mulc_tree!=NULL)
@@ -72,19 +79,19 @@ void TaInput::InitChannels(TaConfig *aConfig){
 #ifdef NOISY
   cout <<  __FUNCTION__ << endl;
 #endif  
-  vector<TString> device_list = aConfig->GetDeviceList();
+  vector<TaDefinition*> device_list = aConfig->GetDeviceDefList();
   int nDevice = device_list.size();
   for(int i=0;i<nDevice;i++){
     TaChannel* aChannel = new TaChannel("mul",device_list[i]);
     fChannelArray.push_back(aChannel);
-    fChannelNames.push_back(device_list[i]);
-    fChannelMap[device_list[i]]=i;
+    fChannelNames.push_back(device_list[i]->GetName());
+    fChannelMap[device_list[i]->GetName()]=aChannel;
   }
-
+  // Load Definition and connect channels
   fChannelErrorFlag = new TaChannel("mul","ErrorFlag");
   fChannelArray.push_back(fChannelErrorFlag);
   fChannelNames.push_back("ErrorFlag");
-  fChannelMap["ErrorFlag"]=nDevice;
+  fChannelMap["ErrorFlag"]=fChannelErrorFlag;
 
   fChannelCutFlag = new TaChannel("mul","ok_cut");
 }
@@ -103,7 +110,7 @@ void TaInput::WriteRawChannels(TaOutput *aOutput){
   int nch = fChannelNames.size();
   for(int i=0;i<nch;i++){
     mul_tree->SetBranchStatus(fChannelNames[i],1);
-    Double_t* fValue_ptr = &(fChannelArray[i]->fBranchValue);
+    Double_t* fValue_ptr = &(fChannelArray[i]->fOutputValue); // FIXME: dirty 
     TBranch *aBranch = mul_tree->GetBranch(fChannelNames[i]);
     if(aBranch!=NULL){
       TLeaf* aLeaf = aBranch->GetLeaf("hw_sum");
@@ -111,22 +118,32 @@ void TaInput::WriteRawChannels(TaOutput *aOutput){
 	aLeaf->SetAddress(fValue_ptr);
       else
 	aBranch->SetAddress(fValue_ptr);
+      // if combined channel is already defined in mulc 
+      fChannelArray[i]->SetDefUsage(kFALSE);
     }
-    else
+    else{
       cout << "TBranch " <<fChannelNames[i] << " not found " << endl;
+      if(fChannelArray[i]->HasUserDefinition())
+	fChannelArray[i]->SetDefUsage(kTRUE);
+    }
   }
   
+  ConnectChannels();
+  
   for(int ich=0;ich<nch;ich++){
-    fChannelArray[ich]->ConstructTreeBranch(aOutput);
+    if(!kMiniOnly)
+      fChannelArray[ich]->ConstructTreeBranch(aOutput);
     fChannelArray[ich]->ConstructMiniTreeBranch(aOutput,"mini");
     fChannelArray[ich]->ConstructSumTreeBranch(aOutput,"sum");
   }
-  fChannelCutFlag->ConstructTreeBranch(aOutput);
+  if(!kMiniOnly)
+    fChannelCutFlag->ConstructTreeBranch(aOutput);
   
   Double_t mini_id=0;
   aOutput->ConstructTreeBranch("sum","run",run_number);
   aOutput->ConstructTreeBranch("mini","mini",mini_id);
-  aOutput->ConstructTreeBranch("mul","mini",mini_id);
+  if(!kMiniOnly)
+    aOutput->ConstructTreeBranch("mul","mini",mini_id);
   Int_t ievt =0;
   Double_t goodCounts=0;
   Int_t mini_start =0;
@@ -145,15 +162,14 @@ void TaInput::WriteRawChannels(TaOutput *aOutput){
       fChannelCutFlag->FillDataArray();
     }
     for(int ich=0;ich<nch;ich++){
-      fChannelArray[ich]->FillOutputValue();
       fChannelArray[ich]->FillDataArray();
       if(isGoodPattern){
 	fChannelArray[ich]->AccumulateRunSum();
 	fChannelArray[ich]->AccumulateMiniSum();
       }
     }
-
-    aOutput->FillTree("mul");
+    if(!kMiniOnly)
+      aOutput->FillTree("mul");
     ievt++;
 
     if(goodCounts==minirun_size){
@@ -200,8 +216,24 @@ void TaInput::Close(){
   input_file->Close();
 }
 
-
 TaChannel* TaInput::GetChannel(TString name){
-  Int_t index = fChannelMap[name];
-  return fChannelArray[index];
+  return  fChannelMap[name];
+}
+
+void TaInput::ConnectChannels(){
+  int nch = fChannelArray.size();
+  for(int i=0;i<nch;i++){
+    if(fChannelArray[i]->IsUsingDefinition()){
+      vector<TString> fRawElementName = fChannelArray[i]->GetRawChannelList();
+      vector<Double_t> fPrefactors = fChannelArray[i]->GetFactorArray();
+      vector<TaChannel*> fRawChannel;
+      auto iter_ele = fRawElementName.begin();
+      while(iter_ele!=fRawElementName.end()){
+	TaChannel *channel_ptr = fChannelMap[*iter_ele];
+	fRawChannel.push_back(channel_ptr);
+	iter_ele++;
+      }
+      fChannelArray[i]->ConnectChannels(fRawChannel,fPrefactors);
+    }
+  }
 }

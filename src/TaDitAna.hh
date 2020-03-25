@@ -12,7 +12,7 @@
 #include "TaDataElement.hh"
 
 using namespace std;
-
+class TaDefinition;
 class TaDitAna: public TObject{
 public:
   TaDitAna(TaConfig *aConfig);
@@ -24,8 +24,10 @@ public:
   void PrintSummary(TaOutput* aOutput);
 
 private:
-  void RegisterRawDataElements(vector<TString> device_array);
-  void ProcessDefinitions(vector<pair<TString,TString> > fDefinitions);
+  void RegisterDataElements(vector<TaDefinition*> device_array);
+  void RegisterDataElements(vector<TString> device_array);
+  void ConnectDataElements();
+  vector<TaDataElement*> BuildDataElementArray( vector<TaDefinition*> device_array);
   vector<TaDataElement*> BuildDataElementArray( vector<TString> device_array);
   void RegisterBranchAddress(TTree* );
   TCut bmod_cut;
@@ -36,7 +38,6 @@ private:
 
   vector<TaDataElement*> fCoilArray;
   vector<TaDataElement*> fDependentVarArray;
-  vector<TaDataElement*> fRawDataElementArray;
   
   map<TString, TaDataElement*> fDataElementMap;
   

@@ -13,7 +13,6 @@ TaRegression::TaRegression(Int_t ana_index, TaConfig *fConfig){
 }
 
 void TaRegression::Process(TaOutput *fOutput){
-
 #ifdef NOISY
   cout << __PRETTY_FUNCTION__ << endl;
 #endif
@@ -29,6 +28,7 @@ void TaRegression::Process(TaOutput *fOutput){
     for(int ich=0;ich<nDV;ich++){
       vector<Double_t> fprefactors = fSlopes[ich];
       fCorrections[ich]->ConnectChannels(fIndependentVar,fprefactors);
+      fCorrections[ich]->ConstructSlopeBranch(fOutput,"mini_"+tree_name);
     }
 
     int istart = minirun_range[imini].first;
@@ -38,7 +38,8 @@ void TaRegression::Process(TaOutput *fOutput){
       CalcCombination();
       AccumulateMiniSum();
       AccumulateRunSum();
-      fOutput->FillTree(tree_name);
+      if(!kOutputMiniOnly)
+	fOutput->FillTree(tree_name);
     } // end of  event loop
     UpdateMiniStat();
     fOutput->FillTree("mini_"+tree_name);

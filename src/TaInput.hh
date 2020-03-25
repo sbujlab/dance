@@ -15,6 +15,7 @@
 using namespace std;
 class TaConfig;
 class TaChannel;
+class TaDefinition;
 class TaOutput;
 class TaInput{
 public:
@@ -22,7 +23,7 @@ public:
   virtual ~TaInput();
 
   inline void SetRunNumber(Int_t i){run_number=i;};
-
+  inline TTree* GetBMWTree() const { return bmw_tree;};
   inline TTree* GetEvtTree() const { return evt_tree;};
   inline TTree* GetMulTree() const { return mul_tree;};
   inline Int_t GetRunNumber() const { return run_number;};
@@ -32,6 +33,7 @@ public:
   inline vector< pair<Int_t,Int_t> > GetMiniRange(){return minirun_range;};
 
   void InitChannels(TaConfig*);
+  void ConnectChannels();
   void WriteRawChannels(TaOutput*);
   Bool_t LoadROOTFile();
   TaChannel* GetChannel(TString name);
@@ -45,6 +47,7 @@ private:
 
   TFile* input_file;
   TTree* evt_tree;
+  TTree* bmw_tree;
   TTree* mul_tree;
   TTree* mulc_tree;
   Double_t run_number;
@@ -55,8 +58,9 @@ private:
   Int_t minirun_size;
   vector<pair<Int_t, Int_t> > minirun_range;
   Int_t nEntries;
+  Bool_t kMiniOnly;
+  map<TString, TaChannel*> fChannelMap;
   vector<TaChannel*> fChannelArray;
-  map<TString, Int_t> fChannelMap;
   vector<TString> fChannelNames;
   
   TaChannel* fChannelErrorFlag;

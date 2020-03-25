@@ -61,7 +61,12 @@ int main(int argc, char** argv){
   fConfig->SetRunNumber(run_number);
 
   TaInput *fInput = new TaInput(fConfig);
-  fInput->LoadROOTFile();
+  if(fInput->LoadROOTFile()==kFALSE){
+    cout <<" -- " ;
+    tsw.Print();
+    return 0;
+  }
+    
   TaOutput *fOutput = new TaOutput(fConfig); 
 
   TaDitAna *fDithering = new TaDitAna(fConfig);
