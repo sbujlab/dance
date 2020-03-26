@@ -31,7 +31,8 @@ TaOutput::~TaOutput(){
 
 void TaOutput::ConstructTreeBranch(TString treeName, 
 				   TString branchName,
-				   Double_t &value){
+				   TString desc,
+				   void* value){
   outputFile->cd();
   if(fTreeArrayByName.find(treeName)==fTreeArrayByName.end()){
     TTree *newTree = new TTree(treeName,"");
@@ -43,11 +44,17 @@ void TaOutput::ConstructTreeBranch(TString treeName,
   Int_t myIndex = nBranches;
   nBranches++;
   TBranch *myBranch = fTreeArrayByName[treeName]->Branch(branchName,
-  							 &value,
-  							 "hw_sum/D");
+  							 value,
+  							 desc);
   fBranchArray.push_back(myBranch);
   fBranchIndex[make_pair(treeName,branchName)]=myIndex;
 
+}
+
+void TaOutput::ConstructTreeBranch(TString treeName, 
+				   TString branchName,
+				   Double_t &value){
+  ConstructTreeBranch(treeName,branchName,"hw_sum/D",&value);
 }
 
 void TaOutput::ConstructStatTreeBranch(TString treeName, 
