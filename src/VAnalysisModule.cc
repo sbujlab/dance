@@ -10,6 +10,8 @@ void VAnalysisModule::Init(Int_t ana_index,TaConfig *aConfig){
   tree_name = aConfig->GetAnalysisParameter(ana_index,"tree_name");
   branch_prefix = aConfig->GetAnalysisParameter(ana_index,"branch_prefix");
   sDVlist = aConfig->GetNameList("dv");
+  vector<TString> local_dv_list = aConfig->GetNameListByIndex(ana_index,"dv");
+  sDVlist.insert(sDVlist.end(),local_dv_list.begin(),local_dv_list.end());
   sIVlist = aConfig->GetNameListByIndex(ana_index,"iv");
   TString kOnlyMini = aConfig->GetConfigParameter("mini_only");
   if(kOnlyMini=="on")
