@@ -51,7 +51,8 @@ Bool_t TaConfig::ParseFile(TString fileName){
       TaDefinition* aDef =ParseChannelDefinition(vecStr[1]);
       if(isInModulde)
 	UpdateDeviceList(fLocalDeviceMap[myIndex][vecStr[0]],aDef);
-      UpdateDeviceList(fGlobalDeviceMap[vecStr[0]],aDef);
+      else
+	UpdateDeviceList(fGlobalDeviceMap[vecStr[0]],aDef);
       
     }else{  // is analysis parameter
       
