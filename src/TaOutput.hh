@@ -17,6 +17,7 @@ public:
   virtual ~TaOutput();
   
   void ConstructTreeBranch(TString treeName, TString branchName,Double_t &value);
+  void ConstructTreeBranch(TString treeName, TString branchName,TString desc, void* value);
   void ConstructStatTreeBranch(TString treeName, TString branchName,STAT &value);
   void FillTree(TString treeName);
 

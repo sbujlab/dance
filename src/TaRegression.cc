@@ -19,16 +19,31 @@ void TaRegression::Process(TaOutput *fOutput){
 
   ConstructOutputs(fOutput);
   Int_t nMini =  minirun_range.size();
-  Int_t nDV = sDVlist.size();
+  const Int_t nDV = sDVlist.size();
+  const Int_t nIV = sIVlist.size();
+
+  vector<Double_t> fvector(nIV,0.0); // place-holder
+  Double_t coeff[nDV][nIV];
+  TString branch_desc = Form("coeff[%d][%d]/D",nDV,nIV);
+  fOutput->ConstructTreeBranch("mini_"+tree_name,"coeff",branch_desc,coeff);
+
+  for(int ich=0;ich<nDV;ich++){
+    fCorrections[ich]->ConnectChannels(fIndependentVar,fvector);
+    fCorrections[ich]->ConstructSlopeBranch(fOutput,"mini_"+tree_name);
+  }
+
   for(int imini=0; imini<nMini;imini++){
     TMatrixD CovDM = GetDetMonCovMatrix(imini);
     TMatrixD CovMM = GetMonMonCovMatrix(imini);
     vector<vector<Double_t> > fSlopes = Solve(CovDM,CovMM);
     
+    for(int idv=0;idv<nDV;idv++)
+      for(int iiv=0;iiv<nIV;iiv++)
+	coeff[idv][iiv] = fSlopes[idv][iiv];
+
     for(int ich=0;ich<nDV;ich++){
       vector<Double_t> fprefactors = fSlopes[ich];
       fCorrections[ich]->ConnectChannels(fIndependentVar,fprefactors);
-      fCorrections[ich]->ConstructSlopeBranch(fOutput,"mini_"+tree_name);
     }
 
     int istart = minirun_range[imini].first;

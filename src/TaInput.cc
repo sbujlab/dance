@@ -122,9 +122,11 @@ void TaInput::WriteRawChannels(TaOutput *aOutput){
       fChannelArray[i]->SetDefUsage(kFALSE);
     }
     else{
-      cout << "TBranch " <<fChannelNames[i] << " not found " << endl;
-      if(fChannelArray[i]->HasUserDefinition())
+      cout << "TBranch " <<fChannelNames[i] << " is not found in JAPAN mulc " << endl;
+      if(fChannelArray[i]->HasUserDefinition()){
+	cout << fChannelNames[i] << " finds definition from user.    " << endl;
 	fChannelArray[i]->SetDefUsage(kTRUE);
+      }
     }
   }
   
