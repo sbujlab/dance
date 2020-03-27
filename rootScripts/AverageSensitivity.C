@@ -28,7 +28,7 @@ void AverageSensitivity(Int_t slug_id, Bool_t kMatrixOutput){
   }
 
   vector<TString> device_array;
-  vector<TString> prex_set1={"bpm4aX","bpm4aY","bpm4eX","bpm4eY","bpm12X","bpm8X"};
+  vector<TString> prex_set1={"bpm4aX","bpm4aY","bpm4eX","bpm4eY","bpm12X","bpm8X","bpm1X"};
   vector<TString> prex_set2={"bpm4aX","bpm4aY","bpm4eX","bpm4eY","bpm11X12X","bpm11X","bpm12X","bpm1X","bpm16X"};
   vector<TString> crex_set={"bpm1X","bpm4aY","bpm4eX","bpm4eY","bpm12X","bpm11X","bpm4aX"};
   if(slug_id<=3)
