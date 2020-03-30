@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 filelist=""
 while IFS= read -r line; do
     filename=" ./dit-coeffs/prexPrompt_ditcoeffs_"$line".root";
