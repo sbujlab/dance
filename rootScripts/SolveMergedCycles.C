@@ -5,7 +5,7 @@
 void SolveMergedCycles(Int_t slug_id, Bool_t kMatrixOutput=kFALSE);
 void SolveMergedCycles(){
   for(int i=1;i<=94;i++)
-    SolveMergedCycles(i);
+    SolveMergedCycles(i,kTRUE);
 }
 void SolveMergedCycles(Int_t slug_id,Bool_t kMatrixOutput){
 

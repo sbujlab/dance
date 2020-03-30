@@ -120,7 +120,10 @@ Double_t compute_residual(Double_t det_val,
   for(int imon=0;imon<nmon;imon++){
     correction +=fSlope[imon]*mon_val[imon];
   }
-  return (det_val -correction);
+  if(correction==0)
+    return 0.0;
+  else
+    return (det_val -correction);
 }
 
 map<Int_t, vector< vector<Double_t> > > GetSlopeMap(vector<TString> det_array,

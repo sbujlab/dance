@@ -1,13 +1,17 @@
 #include "utilities.cc"
 #include "plot_util.cc"
 void ResidualSensByRun(Int_t slug_number,Int_t kSwitch);
+void ResidualSensByRun(Int_t slug_number);
+
+void ResidualSensByRun(Int_t slug_number){
+    ResidualSensByRun(slug_number,0); // avg.  5x5
+    ResidualSensByRun(slug_number,1); // slug avg. ovcn
+    ResidualSensByRun(slug_number,2); // run avg. ovcn
+}
 
 void ResidualSensByRun(){
-  for(int i=1;i<=94;i++){
-    ResidualSensByRun(i,0); // avg.  5x4
-    ResidualSensByRun(i,1); // slug avg. ovcn
-    ResidualSensByRun(i,2); // run avg. ovcn
-  }
+  for(int i=1;i<=94;i++)
+    ResidualSensByRun(i);
 }
 
 void ResidualSensByRun(Int_t slug_number,Int_t kSwitch){
@@ -79,23 +83,27 @@ void ResidualSensByRun(Int_t slug_number,Int_t kSwitch){
   case 0:{
     TString filename=Form("slopes/slug%d_dit_slope_cyclewise_average.root",slug_number); 
     TFile *input = TFile::Open(filename);
-    slope_input = (TTree*)input->Get("dit");
+    if(input!=NULL)
+      slope_input = (TTree*)input->Get("dit");
     break;
   }
   case 1:{
     TString filename=Form("slopes/slug%d_dit_slope_merged_cycle_ovcn.root",slug_number); 
     TFile *input = TFile::Open(filename);
-    slope_input = (TTree*)input->Get("dit1");
+    if(input!=NULL)
+      slope_input = (TTree*)input->Get("dit1");
     break;
   }
   case 2:{
     TString filename=Form("slopes/slug%d_dit_slope_merged_cycle_ovcn.root",slug_number); 
     TFile *input = TFile::Open(filename);
-    slope_input = (TTree*)input->Get("dit2");
+    if(input!=NULL)
+      slope_input = (TTree*)input->Get("dit2");
     break;
   }
   }
-  
+  if(slope_input==NULL)
+    return;
   fSlopeRunMap = GetSlopeMap(det_array,mon_array,slope_input);
 
   vector<Double_t> fdummy_det(ndet,0.0);
@@ -208,7 +216,8 @@ void ResidualSensByRun(Int_t slug_number,Int_t kSwitch){
 	    Double_t residual = compute_residual(det_val[icoil][idet],mon_val[icoil],
 						 fSlopeRunMap[run][idet]);
 	    if( (arm_flag==1 && det_array[idet].Contains("l")) ||
-		(arm_flag==2 && det_array[idet].Contains("r")) ){
+		(arm_flag==2 && det_array[idet].Contains("r")) ||
+		residual==0.0 ){
 	      fRes_ptr[idet] = 0.0;
 	      fResSq_ptr[idet] = -1;
 	      continue;
@@ -331,6 +340,6 @@ void ResidualSensByRun(Int_t slug_number,Int_t kSwitch){
 
 
   gSystem->Exec(Form("pdfunite $(ls ./plots/slug%d_dit_res_buff_*.pdf) ./plots/slug%d_dit_res_%s.pdf",slug_number,slug_number,pdf_label.Data()));
-  gSystem->Exec(Form("rm -f ./plots/slug%d_dit_res_buff_*.pdf ",slug_number));
+  gSystem->Exec(Form("sleep 1; rm -f ./plots/slug%d_dit_res_buff_*.pdf ",slug_number));
 
 }
