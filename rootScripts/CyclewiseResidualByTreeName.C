@@ -1,13 +1,17 @@
 #include "utilities.cc"
 #include "plot_util.cc"
 void CyclewiseResidualByTreeName(Int_t slug_number,TString tree_name);
+void CyclewiseResidualByTreeName(Int_t slug_number);
 
+void CyclewiseResidualByTreeName(Int_t slug_number){
+  CyclewiseResidualByTreeName(slug_number,"dit_slope1");
+  CyclewiseResidualByTreeName(slug_number,"dit_slope3");
+  CyclewiseResidualByTreeName(slug_number,"dit_slope_lsq");
+}
+  
 void CyclewiseResidualByTreeName(){
-  for(int i=79;i<=94;i++){
-    CyclewiseResidualByTreeName(i,"dit_slope1");
-    CyclewiseResidualByTreeName(i,"dit_slope3");
-    CyclewiseResidualByTreeName(i,"dit_slope_lsq");
-  }
+  for(int i=1;i<=94;i++)
+    CyclewiseResidualByTreeName(i);
 }
 
 void CyclewiseResidualByTreeName(Int_t slug_number ,TString tree_name){
