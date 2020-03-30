@@ -144,14 +144,14 @@ map<Int_t, vector< vector<Double_t> > > GetSlopeMap(vector<TString> det_array,
   slope_tree->SetBranchAddress("run",&fRun);
   for(int ievt=0;ievt<nevt;ievt++){
     slope_tree->GetEntry(ievt);
-    Bool_t kSkip = kFALSE;
-    for(int idet=0;idet<ndet;idet++){
-      for(int imon=0;imon<nmon;imon++){
-	if(fSlope[idet][imon]==0)
-	  kSkip=kTRUE;
-      }
-    }
-    if(!kSkip)
+    // Bool_t kSkip = kFALSE;
+    // for(int idet=0;idet<ndet;idet++){
+    //   for(int imon=0;imon<nmon;imon++){
+    // 	if(fSlope[idet][imon]==0)
+    // 	  kSkip=kTRUE;
+    //   }
+    // }
+    // if(!kSkip)
       fMap[fRun] = fSlope;
   }
   return fMap;
