@@ -71,8 +71,9 @@ int main(int argc, char** argv){
   
   vector<VAnalysisModule*> fAnalyses = fConfig->GetAnalysisArray();
   vector<VAnalysisModule*>::iterator iter_ana = fAnalyses.begin();
+  int ana_counter =0;
   while(iter_ana!=fAnalyses.end()){
-    cout << "Loading Module " << endl;
+    cout << "Procssing Analysis Module "<< ana_counter++  << endl;
     (*iter_ana)->LoadInput(fInput);
     (*iter_ana)->Process(fOutput);
     (*iter_ana)->End();
