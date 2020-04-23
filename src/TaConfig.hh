@@ -11,9 +11,7 @@ using namespace std;
 #define __TaConfig_hh__
 
 #include "TaInput.hh"
-#include "TaOutput.hh"
 #include "TaDefinition.hh"
-class TaOutput;
 class VAnalysisModule;
 class TaRegression;
 class TaDefinition;

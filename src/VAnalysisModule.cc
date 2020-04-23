@@ -55,10 +55,11 @@ void VAnalysisModule::LoadInput(TaInput *aInput){
 
 void VAnalysisModule::ConstructOutputs(TaOutput* fOutput){
   Int_t nDV = sDVlist.size();
+  TString leaflist = "hw_sum/D:block0:block1:block2:block3";
   for(int ich=0;ich<nDV;ich++){
     if(!kOutputMiniOnly){
-      fOutputChannels[ich]->ConstructTreeBranch(fOutput);
-      fCorrections[ich]->ConstructTreeBranch(fOutput);
+      fOutputChannels[ich]->ConstructTreeBranch(fOutput,leaflist);
+      fCorrections[ich]->ConstructTreeBranch(fOutput,leaflist);
     }
 
     fOutputChannels[ich]->ConstructMiniTreeBranch(fOutput,"mini_"+tree_name);
@@ -90,7 +91,7 @@ void VAnalysisModule::CalcCombination(){
 
 void VAnalysisModule::AccumulateMiniSum(){
   Int_t nDV = sDVlist.size();
-  if(fChannelCutFlag->fOutputValue){
+  if((fChannelCutFlag->fOutputValue.hw_sum)==1){
     for(int ich=0;ich<nDV;ich++){
       fCorrections[ich]->AccumulateMiniSum();
       fOutputChannels[ich]->AccumulateMiniSum();
@@ -100,7 +101,7 @@ void VAnalysisModule::AccumulateMiniSum(){
 
 void VAnalysisModule::AccumulateRunSum(){
   Int_t nDV = sDVlist.size();
-  if(fChannelCutFlag->fOutputValue){
+  if((fChannelCutFlag->fOutputValue.hw_sum)==1){
     for(int ich=0;ich<nDV;ich++){
       fCorrections[ich]->AccumulateRunSum();
       fOutputChannels[ich]->AccumulateRunSum();

@@ -1,16 +1,15 @@
-#ifndef __TaInput_hh__
-#define __TaInput_hh__
-
-#include "TaConfig.hh"
-#include "TaChannel.hh"
 #include "TaOutput.hh"
-
+#include "TaChannel.hh"
+#include "TaConfig.hh"
 #include <vector>
 #include <map>
 #include "TObject.h"
 #include "TString.h"
 #include "TFile.h"
 #include "TTree.h"
+
+#ifndef __TaInput_hh__
+#define __TaInput_hh__
 
 using namespace std;
 class TaConfig;

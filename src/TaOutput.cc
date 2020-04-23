@@ -1,4 +1,5 @@
 #include "TaOutput.hh"
+#include "TaConfig.hh"
 ClassImp(TaOutput)
 
 TaOutput::TaOutput():nBranches(0){
@@ -50,6 +51,27 @@ void TaOutput::ConstructTreeBranch(TString treeName,
   fBranchIndex[make_pair(treeName,branchName)]=myIndex;
 
 }
+void TaOutput::ConstructTreeBranch(TString treeName, 
+				   TString branchName,
+				   TString desc,
+				   ROOTDATA& value){
+  outputFile->cd();
+  if(fTreeArrayByName.find(treeName)==fTreeArrayByName.end()){
+    TTree *newTree = new TTree(treeName,"");
+    newTree->Branch("unit",&parity_scale,"ppm/D:ppb:um:nm");
+    fTreeArrayByName[treeName]=newTree;
+    fTreeArray.push_back(newTree);
+  }
+  
+  Int_t myIndex = nBranches;
+  nBranches++;
+  TBranch *myBranch = fTreeArrayByName[treeName]->Branch(branchName,
+  							 &value,
+  							 desc);
+  fBranchArray.push_back(myBranch);
+  fBranchIndex[make_pair(treeName,branchName)]=myIndex;
+
+}
 
 void TaOutput::ConstructTreeBranch(TString treeName, 
 				   TString branchName,
@@ -58,8 +80,8 @@ void TaOutput::ConstructTreeBranch(TString treeName,
 }
 
 void TaOutput::ConstructStatTreeBranch(TString treeName, 
-				      TString branchName,
-				      STAT &value){
+				       TString branchName,
+				       STAT &value){
   outputFile->cd();
   if(fTreeArrayByName.find(treeName)==fTreeArrayByName.end()){
     TTree *newTree = new TTree(treeName,"");

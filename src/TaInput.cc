@@ -110,14 +110,9 @@ void TaInput::WriteRawChannels(TaOutput *aOutput){
   int nch = fChannelNames.size();
   for(int i=0;i<nch;i++){
     mul_tree->SetBranchStatus(fChannelNames[i],1);
-    Double_t* fValue_ptr = &(fChannelArray[i]->fOutputValue); // FIXME: dirty 
     TBranch *aBranch = mul_tree->GetBranch(fChannelNames[i]);
     if(aBranch!=NULL){
-      TLeaf* aLeaf = aBranch->GetLeaf("hw_sum");
-      if(aLeaf!=NULL)
-	aLeaf->SetAddress(fValue_ptr);
-      else
-	aBranch->SetAddress(fValue_ptr);
+      fChannelArray[i]->RegisterBranchAddress(aBranch);
       // if combined channel is already defined in mulc 
       fChannelArray[i]->SetDefUsage(kFALSE);
     }
@@ -131,10 +126,10 @@ void TaInput::WriteRawChannels(TaOutput *aOutput){
   }
   
   ConnectChannels();
-  
+  TString leaflist = "hw_sum/D:block0:block1:block2:block3";
   for(int ich=0;ich<nch;ich++){
     if(!kMiniOnly)
-      fChannelArray[ich]->ConstructTreeBranch(aOutput);
+      fChannelArray[ich]->ConstructTreeBranch(aOutput,leaflist);
     fChannelArray[ich]->ConstructMiniTreeBranch(aOutput,"mini");
     fChannelArray[ich]->ConstructSumTreeBranch(aOutput,"sum");
   }
@@ -155,12 +150,12 @@ void TaInput::WriteRawChannels(TaOutput *aOutput){
     if(elist_mul->GetIndex(ievt)!=-1){
       isGoodPattern=kTRUE;
       goodCounts++;
-      fChannelCutFlag->fOutputValue = 1;
+      fChannelCutFlag->fOutputValue.hw_sum = 1; // FIXME
       fChannelCutFlag->FillDataArray();
     }
     else{
       isGoodPattern=kFALSE;
-      fChannelCutFlag->fOutputValue = 0;
+      fChannelCutFlag->fOutputValue.hw_sum = 0; // FIXME
       fChannelCutFlag->FillDataArray();
     }
     for(int ich=0;ich<nch;ich++){
@@ -188,7 +183,7 @@ void TaInput::WriteRawChannels(TaOutput *aOutput){
 	mini_start = minirun_range[nMinirun-1].first;
 	minirun_range.pop_back();
 	
-	cout << " -- Meeting last mini-run, " << endl;
+	cout << " -- Meeting the last mini-run, " << endl;
 	cout << " -- the rest will be merged into this mini-run  "  << endl;
       }
       if(!is_last_minrun){
