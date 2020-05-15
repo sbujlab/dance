@@ -9,7 +9,7 @@ fi
 
 level="Prompt"			
 shopt -s extglob
-rootfile_list=$(ls -1 ./japanOutput/prex$level\_pass1_$runnum.!(*jlab*).root);
+rootfile_list=$(ls -1 $QW_ROOTFILES/prex$level\_pass1_$runnum.!(*jlab*).root);
 shopt -u extglob
 
 for rootfile  in $rootfile_list
@@ -24,9 +24,9 @@ do
     then
       sensConf="sens.3130-.conf"
     fi
-    if [ $(($run_num)) -ge 3404 ]
+    if [ $(($run_num)) -ge 3390 ]
     then
-      sensConf="sens.3404-.conf"
+      sensConf="sens.3390-.conf"
     fi
     if [ $(($run_num)) -ge 3803 ]
     then
@@ -36,9 +36,9 @@ do
     then
       sensConf="sens.5376-.conf"
     fi
-    ./lagrange/calcit \
+    ./calcit \
     	-f $rootfile \
-    	-c ./lagrange/conf/$sensConf ; 
+    	-c ./conf/$sensConf ; 
 
 done
 

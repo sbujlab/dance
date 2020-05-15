@@ -23,10 +23,14 @@ do
     echo $(($run_num))
     echo $run_num
 
-    conf="ifarm-respin.conf"
-    if [ $(($run_num)) -ge 3404 ]
+    conf="lagrange.conf"
+    if [ $(($run_num)) -ge 3390 ]
     then
-      conf="ifarm-respin.3404-.conf"
+      conf="lagrange.3390-.conf"
+    fi
+    if [ $(($run_num)) -ge 4735 ]
+    then
+      conf="lagrange.4735-.conf"
     fi
 
     ./dance \
