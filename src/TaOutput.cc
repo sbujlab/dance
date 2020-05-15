@@ -18,7 +18,7 @@ TaOutput::TaOutput(TaConfig* aConfig):nBranches(0){
   run_number = aConfig->GetRunNumber();
   int seg_number = aConfig->GetSegNumber();
   outputFile = new TFile(path+prefix+Form("%d.%03d.root",run_number,seg_number),"RECREATE");
-  // fPrinter = new TaPrinter(path+prefix+Form("%d_summary.txt",run_number));
+  fPrinter = new TaPrinter(path+prefix+Form("%d_summary.txt",run_number));
   parity_scale.ppm=1e-6;
   parity_scale.ppb=1e-9;
   parity_scale.um=1e-3;
