@@ -31,7 +31,7 @@ void AverageSensitivity(Int_t slug_id, Bool_t kMatrixOutput){
   vector<TString> prex_set1={"bpm4aX","bpm4aY","bpm4eX","bpm4eY","bpm12X","bpm8X","bpm1X"};
   vector<TString> prex_set2={"bpm4aX","bpm4aY","bpm4eX","bpm4eY","bpm11X12X","bpm11X","bpm12X","bpm1X","bpm16X"};
   vector<TString> crex_set={"bpm1X","bpm4aY","bpm4eX","bpm4eY","bpm12X","bpm11X","bpm4aX"};
-  if(slug_id<=3)
+  if(slug_id<=2)
     device_array = prex_set1;
   else if(slug_id<=94 || slug_id==501)
     device_array = prex_set2;
@@ -61,7 +61,7 @@ void AverageSensitivity(Int_t slug_id, Bool_t kMatrixOutput){
   TChain *sens_tree = new TChain("sens");
   Int_t nrun = fRunList.size();
   for(int i=0;i<nrun;i++){
-    TString filename=Form("./dit-coeffs/prexPrompt_ditcoeffs_%d.root",
+    TString filename=Form("./dit-coeffs/prexPrompt_ditcoeffs_%d.000.root",
 			  fRunList[i]);
     sens_tree->Add(filename);
   }
@@ -175,7 +175,12 @@ void AverageSensitivity(Int_t slug_id, Bool_t kMatrixOutput){
       cout << "Writing output: " << output_filename << endl;
       TFile *matrix_output = TFile::Open(output_filename,"RECREATE");
       matrix_output->WriteObject(&sensMatrix,"sens_matrix");
+      TH2D *h1d = new TH2D();
+      TH2D *h1c = new TH2D();
+      for(int idv=0;idv<nDev;idv++)
+	h1d->Fill(device_array[idv],idv,1);
       matrix_output->WriteObject(&device_array,"dv_array");
+      matrix_output->WriteObject(h1d,"h1dv");
       matrix_output->WriteObject(&coil_array,"coil_array");
       matrix_output->Close();
     }
