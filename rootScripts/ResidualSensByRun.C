@@ -7,6 +7,7 @@ void ResidualSensByRun(Int_t slug_number){
     ResidualSensByRun(slug_number,0); // avg.  5x5
     ResidualSensByRun(slug_number,1); // slug avg. ovcn
     ResidualSensByRun(slug_number,2); // run avg. ovcn
+    ResidualSensByRun(slug_number,3); // 5 coil2 slug merged
 }
 
 void ResidualSensByRun(){
@@ -101,6 +102,14 @@ void ResidualSensByRun(Int_t slug_number,Int_t kSwitch){
       slope_input = (TTree*)input->Get("dit2");
     break;
   }
+  case 3:{
+    TString filename=Form("slopes/slug%d_dit_slope_merged_cycle_5coils.root",slug_number); 
+    TFile *input = TFile::Open(filename);
+    if(input!=NULL)
+      slope_input = (TTree*)input->Get("dit1");
+    break;
+  }
+
   }
   if(slope_input==NULL)
     return;
@@ -156,6 +165,9 @@ void ResidualSensByRun(Int_t slug_number,Int_t kSwitch){
   case 2:{
     pdf_label = "run_ovcn";
     break; }
+  case 3:{
+    pdf_label = "slug_5x5_merged";
+    break; }
   }
 
   TFile *output = TFile::Open(Form("./residuals/slug%d_%s.root",slug_number,pdf_label.Data()),
@@ -210,6 +222,7 @@ void ResidualSensByRun(Int_t slug_number,Int_t kSwitch){
       
       Int_t arm_flag = fArmMap[(Int_t)run];
       for(int icoil=0;icoil<ncoil;icoil++){
+	coil_id = coil_index[icoil];
 	if(IsGoodCoil(mon_err[icoil])
 	   && !IsBadCycle(fblmap,cycID,coil_index[icoil] )){
 	  for(int idet=0;idet<ndet;idet++){
@@ -231,8 +244,8 @@ void ResidualSensByRun(Int_t slug_number,Int_t kSwitch){
 	    fResRaw[idet*ncoil+icoil].push_back(det_val[icoil][idet]);
 	    fResXcord[idet*ncoil+icoil].push_back(ncycles-1);
 	  } // end of det loop
+	  residual_tree->Fill();
 	} // end of if its good coil
-	residual_tree->Fill();
       } // end of coil loop
     }// end of if kMatch
   } // end of event loop
