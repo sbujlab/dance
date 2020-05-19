@@ -1,6 +1,6 @@
 #include "TaDataElement.hh"
 #include <iostream>
-
+#include "TMath.h"
 ClassImp(TaDataElement)
 
 using namespace std;
@@ -32,7 +32,11 @@ Double_t TaDataElement::GetHwSum(){
       fhw_sum+=factor*value;
     }
   }
-  return fhw_sum;
+
+  if(myName=="bmod_trim7")
+    return 232.1*sin((fhw_sum+61.94)/1361*2*TMath::Pi())+1693;
+  else
+    return fhw_sum;
 }
 
 Double_t TaDataElement::TestDeviceErrorCode(Int_t ErrorMask){

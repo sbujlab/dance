@@ -199,6 +199,8 @@ void TaDitAna::RegisterBranchAddress(TTree *fTree){
   auto iter = fDataElementMap.begin();
   while(iter!=fDataElementMap.end()){
     TString myName=(*iter).first;
+    if(myName=="bmod_trim7")
+      myName="bmod_ramp";
     TBranch* fBranch = fTree->GetBranch(myName);
     if(fBranch==NULL){
       cout << "Branch " << myName  << " is not found" << endl;
