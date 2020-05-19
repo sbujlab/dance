@@ -1,0 +1,372 @@
+#include "LoadTargetMap.C"
+pair<Int_t,Int_t> SortRange(FILE *alist);
+Double_t GetSlugNumber(TString title);
+pair<Int_t,Int_t> ParseRange(TString);
+map< Double_t , pair<Int_t,Int_t> >  LoadRangesMap();
+void PrintSummary(  map< Double_t , pair<Int_t,Int_t> > fRangesMap);
+void PlotSummary(TTree*,map< Double_t ,pair<Int_t,Int_t> > );
+void AverageSlope();
+TGraphErrors* GetBand(Double_t fy, Double_t fyrms, 
+		      pair<Int_t,Int_t>);
+vector<TLine*> GetGuideLines(Int_t low, Int_t up, 
+			     Double_t ymin,Double_t ymax,
+			     map<Double_t, pair<Int_t,Int_t> > fmap);
+void AverageSlope(){
+  map< Double_t , pair<Int_t,Int_t> > fRangesMap = LoadRangesMap();
+  TFile *merged_file = TFile::Open("rootfiles/ditcoeff_merged.root");
+  TTree *dit = (TTree*)merged_file->Get("dit");
+  dit->SetMarkerStyle(20);
+  dit->SetMarkerSize(1);
+  gStyle->SetTitleSize(0.1,"t");
+  gStyle->SetTitleY(1.03);
+  vector<TString> dvlist={"usl","usr","dsl","dsr",
+			  "atl1","atl2","atr1","atr2"};
+  vector<TString> mdlist={"usl","usr","dsl","dsr"};
+  vector<TString> ivlist={"4aX","4eX","4aY","4eY","11X12X"};
+  vector<TString> bpmlist={"bpm4aX","bpm4eX","bpm4aY","bpm4eY","diff_bpmE"};
+
+  // ++++++  Cut Section +++++++
+  TCut fCut = "flag==1";
+
+  // ++ Bad cycle/run cuts
+  vector<Int_t> fBadCycleNumber={300,586,588,970,971,972,
+				 2185,2773,1845,1846,1821,3271};
+  TString fGlobalCutTitle;
+  auto itcyc = fBadCycleNumber.begin();
+  while(itcyc!=fBadCycleNumber.end()){
+    if(itcyc==fBadCycleNumber.begin())
+      fGlobalCutTitle = Form("cyclenum!=%d",*itcyc);
+    else
+      fGlobalCutTitle += Form("&& cyclenum!=%d",*itcyc);
+    itcyc++;
+  }
+  fGlobalCutTitle += ("&& !(cyclenum>=1821 && cyclenum<=1848)");
+  fGlobalCutTitle += ("&& run!=3803");
+  TCut fGlobalCut = TCut(fGlobalCutTitle);
+  fCut += fGlobalCut;
+
+  // ++ det-specified cuts to get rid of single arm failures and etc
+  map<TString,vector<TString> > fLocalBadCycle;  
+  map<TString,TCut > fLocalCutsMap;  
+  fLocalBadCycle["usl"]={"860"};
+  fLocalBadCycle["dsl"]={"860"};
+  fLocalBadCycle["atl1"]={"860"};
+  fLocalBadCycle["atl2"]={"860"};
+
+  fLocalBadCycle["usr"]={"3323-3353","1990-1998"};
+  fLocalBadCycle["dsr"]={"3323-3353","1990-1998"};
+  fLocalBadCycle["atr1"]={"3323-3353","1990-1998"};
+  fLocalBadCycle["atr2"]={"3323-3353","1990-1998"};
+
+  auto idet = fLocalBadCycle.begin();
+  while(idet!=fLocalBadCycle.end()){
+    TString detname = (*idet).first;
+    vector<TString> fCycleArray = (*idet).second;
+    TString myCutTitle="";
+    auto icyc = fCycleArray.begin();
+    while(icyc!=fCycleArray.end()){
+
+      if(icyc!=fCycleArray.begin())
+	myCutTitle +="&&";
+
+      if((*icyc).Contains('-'))
+	myCutTitle += Form("!(cyclenum>=%d && cyclenum<=%d)",
+			  ParseRange(*icyc).first,
+			  ParseRange(*icyc).second);
+      else
+	myCutTitle += "cyclenum!="+(*icyc);
+      icyc++;
+    }
+    if(myCutTitle!="")
+      fLocalCutsMap[detname] = TCut(myCutTitle);
+    idet++;
+  }
+  // ++++++  End of Cut Section +++++++
+  const Int_t nIV=ivlist.size();
+  const Int_t nDV=dvlist.size();
+  vector<Double_t> fSlope_val(nIV*nDV);
+  TFile* avg_output = TFile::Open("./rootfiles/ditcoeff_slope_averaged.root","RECREATE");
+  TTree* dit_tree = new TTree("dit","dit");
+  for(int idv=0;idv<nDV;idv++){
+    for(int iiv=0;iiv<nIV;iiv++){  
+      TString branch_name =Form("%s_%s",dvlist[idv].Data(),ivlist[iiv].Data());
+      dit_tree->Branch(branch_name,&fSlope_val[idv*nIV+iiv]);
+    }
+  }
+  Double_t fRun,fCounter;
+  dit_tree->Branch("run",&fRun);
+  dit_tree->Branch("range",&fCounter);
+  map<TString,TMultiGraph*> fGraphArray  ;
+  auto itdv = dvlist.begin();
+  while(itdv!=dvlist.end()){
+    fGraphArray[*itdv] = new TMultiGraph[nIV];
+    itdv++;
+  }
+  auto itrg = fRangesMap.begin();
+  while(itrg!=fRangesMap.end()){
+    map<TString, vector<Double_t> > fSlopesMean;
+    map<TString, vector<Double_t> > fSlopesRMS;
+    Int_t low = (*itrg).second.first;
+    Int_t up = (*itrg).second.second;
+    TString strCut = Form("run>=%d && run<=%d",low,up);
+    TCut fRangeCut = TCut(strCut);
+    Int_t npt = dit->Draw("1",fCut+fRangeCut);
+    if(npt==0){
+      cerr << " -- Warning : no data for slopes " 
+	   << " in slug " << (*itrg).first
+	   << " in run " << low << "-" << up << endl;
+      itrg++;
+      continue;
+    }
+
+    ofstream mapfile;
+    TString fullpath="./mapfiles/";
+    TString range_tag ;
+    if(low==up)
+      range_tag = Form("%d",low);
+    else
+      range_tag = Form("%d-%d",low,up);
+    TString mapname = "prex_combiner_dit."+range_tag+".map";
+    fullpath +=mapname;
+    mapfile.open(fullpath.Data());
+    // vector<TString> det_list;
+    // if(low>=3803)
+    //   det_list = dvlist;
+    // else
+    //   det_list = mdlist;
+    auto itrdv = dvlist.begin();
+    while(itrdv!=dvlist.end()){
+      mapfile << "[asym:@dit_asym_"<<(*itrdv)<<"]" << endl;
+      mapfile << "asym:"<<(*itrdv) << ",1.0"<< endl;
+      TCut fDetLocalCut;
+      if(fLocalCutsMap.find(*itrdv)!=fLocalCutsMap.end())
+	fDetLocalCut = fLocalCutsMap[*itrdv];
+      for(int i=0;i<nIV;i++){
+	TString drawcmd = Form("%s_%s",(*itrdv).Data(),
+			       ivlist[i].Data());
+	npt = dit->Draw(drawcmd,fCut+fRangeCut+fDetLocalCut,"goff");
+	TH1D *htemp = (TH1D*)gDirectory->FindObject("htemp");
+	if(htemp!=NULL){
+	  fSlopesMean[*itrdv].push_back(1e-3*htemp->GetMean());
+	  fSlopesRMS[*itrdv].push_back(1e-3*htemp->GetRMS());
+	}
+	mapfile << "diff:"<<bpmlist[i] << ","
+		<< -htemp->GetMean()<<"e-3"<< endl;
+	TGraphErrors *fGE = GetBand(htemp->GetMean(),htemp->GetRMS(),(*itrg).second); 
+	fGraphArray[*itrdv][i].Add(fGE,"3l");
+      }
+      mapfile << endl;
+      itrdv++;
+    }
+    for(int idv=0;idv<nDV;idv++)
+      for(int iiv=0;iiv<nIV;iiv++)
+	fSlope_val[idv*nIV+iiv] = fSlopesMean[dvlist[idv]][iiv];
+    fCounter++;
+    for(int i=low;i<=up;i++){
+      fRun = i;
+      dit_tree->Fill();
+    }
+    mapfile.close();
+    itrg++;
+  } // end of loop of ranges
+  dit_tree->Write();
+  avg_output->Close();
+  map<TString ,pair<Int_t,Int_t> > fTargetMap=LoadTargetMap();
+  auto itgt = fTargetMap.begin();
+  while(itgt!=fTargetMap.end()){
+
+    TCanvas c1("c1","c1",800,1200);
+    c1.Divide(1,5);
+    TString target_name = (*itgt).first;
+    target_name.ReplaceAll("D-","");
+    target_name.ReplaceAll("-D","");
+    c1.Print(target_name+"_summary.pdf[");
+    int low =(*itgt).second.first;
+    int up= (*itgt).second.second;
+    TString strCut = Form("run>=%d && run<=%d",low,up);
+    TCut fRangeCut = TCut(strCut);
+    auto itrdv = dvlist.begin();
+    while(itrdv!=dvlist.end()){
+      c1.Clear("D");
+      TCut fDetLocalCut;
+      if(fLocalCutsMap.find(*itrdv)!=fLocalCutsMap.end())
+	fDetLocalCut = fLocalCutsMap[*itrdv];
+
+      for(int i=0;i<nIV;i++){
+	c1.cd(i+1);
+	TString drawcmd = Form("%s_%s:run",(*itrdv).Data(),
+			       ivlist[i].Data());
+	Int_t npt = dit->Draw(drawcmd,fCut+fRangeCut+fDetLocalCut,"goff");
+	TGraph *gtmp = new TGraph(npt,dit->GetV2(),dit->GetV1());
+	double ymin = gtmp->GetYaxis()->GetXmin();
+	double ymax = gtmp->GetYaxis()->GetXmax();
+	gtmp->SetMarkerStyle(2);
+	gtmp->SetMarkerColor(12);
+	gtmp->SetMarkerSize(0.6);
+	fGraphArray[*itrdv][i].Add(gtmp,"p");
+	fGraphArray[*itrdv][i].Draw("A");
+	fGraphArray[*itrdv][i].SetTitle((*itrdv)+"_vs_"+ivlist[i] );
+	fGraphArray[*itrdv][i].GetXaxis()->SetRangeUser(low,up);
+	fGraphArray[*itrdv][i].GetXaxis()->SetTitle("run number");
+	fGraphArray[*itrdv][i].GetXaxis()->SetLabelSize(0.07);
+	fGraphArray[*itrdv][i].GetXaxis()->SetTitleSize(0.05);
+	fGraphArray[*itrdv][i].GetYaxis()->SetRangeUser(ymin,ymax);
+	fGraphArray[*itrdv][i].GetYaxis()->SetTitle("slope (ppm/um)");
+	fGraphArray[*itrdv][i].GetYaxis()->SetLabelSize(0.07);
+	fGraphArray[*itrdv][i].GetYaxis()->SetTitleSize(0.05);
+	vector<TLine*> fBorders = GetGuideLines(low,up,
+						ymin,ymax,
+						fRangesMap);
+	auto itl = fBorders.begin();
+	while(itl!=fBorders.end()){
+	  (*itl)->Draw("same");
+	  itl++;
+	}
+	
+      }
+      c1.Print(target_name+"_summary.pdf");    
+      itrdv++;
+    }
+    c1.Print(target_name+"_summary.pdf]");
+
+    itgt++;
+  }
+
+  merged_file->Close();
+}
+map< Double_t , pair<Int_t,Int_t> >  LoadRangesMap(){
+  gSystem->Exec("ls -1 splits/*.list > splits/file_list");
+  FILE *filelist = fopen("splits/file_list","r");
+  char filename[256];
+  map< Double_t , pair<Int_t,Int_t> > fRangesMap;
+  while(!feof(filelist)){
+    fscanf(filelist,"%s\n",filename);
+    FILE *alist  = fopen(filename,"r");
+    if(alist!=NULL){
+      Double_t slug_id = GetSlugNumber(TString(filename));      
+      fRangesMap[slug_id]=SortRange(alist);
+      fclose(alist);
+    }else
+      cerr << "--" << filename
+	   << " is not found !! " << endl;
+  }
+  fclose(filelist);
+  
+  for(int i=0;i<=94;i++){
+    Double_t slug= (Double_t)i;
+    if(fRangesMap.find(slug+0.1)==fRangesMap.end()){
+      TString fullpath =Form("prex-runlist/simple_list/slug%d.list",i);
+      FILE *alist = fopen(fullpath.Data(),"r");
+      if(alist!=NULL){
+	fRangesMap[slug]=SortRange(alist);
+	fclose(alist);
+      }
+    }
+  }
+  PrintSummary(fRangesMap);
+  // gSystem->Exec("rm -f ./splits/file_list");
+  
+  return fRangesMap;
+}
+
+void PrintSummary(  map< Double_t , pair<Int_t,Int_t> > fRangesMap){
+  auto iter = fRangesMap.begin();
+  while(iter!=fRangesMap.end()){
+    cout << "-- Slug " << (*iter).first << endl;
+    cout << " \t Range " 
+	 << (*iter).second.first 
+	 << "-" 
+	 << (*iter).second.second << endl;
+
+    iter++;
+  }
+
+}
+pair<Int_t,Int_t> SortRange(FILE *alist){
+  Int_t low=0, up=0;
+  Bool_t isFirst=kTRUE;
+  Int_t run_number;
+  while(!feof(alist)){
+    run_number =0;
+    fscanf(alist,"%d\n",&run_number);
+    if(run_number!=0){
+      if(isFirst){
+	low = run_number;
+	up = run_number;
+	isFirst = kFALSE;
+      }
+      if(run_number>up)
+	up =run_number;
+      if(run_number<low)
+	low=run_number;
+    }
+  }
+  return make_pair(low,up);
+}
+
+Double_t GetSlugNumber(TString title){
+  title.ReplaceAll("splits/slug","");
+  title.ReplaceAll(".list","");
+  Double_t digi = title.Atof();
+  Int_t split = floor(digi/100.0);
+  Double_t slug = digi-split*100;
+  slug +=(double)split/10.0;
+  return slug;
+}
+
+TGraphErrors* GetBand(Double_t fin, Double_t finrms,
+		      pair<Int_t,Int_t> range){
+
+  Int_t npt = range.second - range.first +1;
+  Double_t *fx = new Double_t[npt];
+  Int_t run = range.first;
+  Double_t *fy = new Double_t[npt];
+  Double_t *frms = new Double_t[npt];
+
+  for(int j=0;j<npt;j++){
+    fx[j] =(Double_t)(run++);
+    fy[j] = fin;
+    frms[j] = finrms;
+  }
+  TGraphErrors* geb = new TGraphErrors(npt,fx,fy,0,frms);
+  geb->SetLineColor(kRed);
+  geb->SetLineWidth(2);
+  geb->SetFillStyle(3001);
+  geb->SetFillColor(kOrange);
+  return geb;
+}
+
+vector<TLine*> GetGuideLines(Int_t low, Int_t up, 
+			     Double_t ymax, Double_t ymin,
+			     map<Double_t, pair<Int_t,Int_t> > fmap){
+  vector<TLine*> fret;
+  auto iter = fmap.begin();
+  while(iter!=fmap.end()){
+    int start = (*iter).second.first;
+    int end = (*iter).second.second;
+    if( (start>low && start<up ) || (end>low && end<up) ) {
+      TLine *lin_start = new TLine(start,ymin,start,ymax);
+      lin_start->SetLineColorAlpha(kBlue,0.7);
+      lin_start->SetLineStyle(3);
+      TLine *lin_end = new TLine(end,ymin,end,ymax);
+      lin_end->SetLineColorAlpha(kGreen,0.7);
+      lin_end->SetLineStyle(3);
+      fret.push_back(lin_start);
+      fret.push_back(lin_end);
+    }
+    iter++;
+  }
+
+  return fret;
+}
+
+pair<Int_t,Int_t> ParseRange(TString input){
+  
+  Ssiz_t length  = input.Length();
+  Ssiz_t dash_pt = input.First('-');
+  TString start = input(0,dash_pt);
+  TString end = input(dash_pt+1, length-dash_pt-1);
+  Int_t ilow = start.Atoi();
+  Int_t iup = end.Atoi();
+  return make_pair(ilow,iup);
+}

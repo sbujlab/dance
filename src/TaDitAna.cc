@@ -15,19 +15,23 @@ TaDitAna::TaDitAna(TaConfig* aConfig){
   tree_name = aConfig->GetConfigParameter("tree_name");
   TString bmodcut_str =  aConfig->GetConfigParameter("bmod_cut");
   bmod_cut = bmodcut_str.Data();
-  RegisterRawDataElements(aConfig->GetRawElementArray());
+  RegisterDataElements(aConfig->GetDeviceDefList()); 
 
   vector<TString> fCoilNameArray;
   for(int i=1;i<=7;i++)
     fCoilNameArray.push_back(Form("bmod_trim%d",i));
-  RegisterRawDataElements(fCoilNameArray);
+  RegisterDataElements(fCoilNameArray);
   for(int i=1;i<=7;i++)
     fCoilArray.push_back(fDataElementMap[Form("bmod_trim%d",i)]);
 
-  ProcessDefinitions(aConfig->GetDataElementDefinitions());
-  fDependentVarArray = BuildDataElementArray( aConfig->GetDependentVarArray() );
-
-  templateCycle.LoadDetectorList(aConfig->GetDetectorList());
+  ConnectDataElements();//*
+  
+  fDependentVarArray = BuildDataElementArray( aConfig->GetDefList("det") );
+  vector<TaDataElement*> fMonVarArray = BuildDataElementArray( aConfig->GetDefList("mon") );
+  fDependentVarArray.insert(fDependentVarArray.end(),
+  			    fMonVarArray.begin(),fMonVarArray.end());
+  
+  templateCycle.LoadDetectorList(aConfig->GetNameList("det"));
   templateCycle.RegisterDependentVarArray(fDependentVarArray);
   templateCycle.RegisterCoilArray(fCoilArray);
   templateCycle.InitAccumulators();
@@ -54,7 +58,9 @@ Bool_t TaDitAna::LoadModulationData(TaInput *aInput){
 #ifdef NOISY
   cout << __FUNCTION__ << endl;
 #endif
-  TTree *evt_tree = aInput->GetEvtTree();
+  TTree *evt_tree = aInput->GetBMWTree();
+  if(evt_tree==NULL || evt_tree->GetEntries()==0)
+    evt_tree = aInput->GetEvtTree();
 
   TEventList *elist = new TEventList("elist");
   TEventList *elist_all = new TEventList("elist_all");
@@ -102,7 +108,7 @@ Bool_t TaDitAna::LoadModulationData(TaInput *aInput){
       continue;
     if(cycle_id >last_cycle_id){
       if(last_cycle_id!=0){
-      	fSuperCycleArray.push_back(supercycle_buff);
+	fSuperCycleArray.push_back(supercycle_buff);
       }
 
       supercycle_buff = templateCycle;
@@ -139,72 +145,17 @@ void TaDitAna::Process(){
     iter++;
   }
 }
-void TaDitAna::ProcessDefinitions(vector<pair<TString,TString> > fDefinitions){
-#ifdef NOISY
-  cout << __PRETTY_FUNCTION__ << endl;
-#endif
-  vector<pair<TString,TString> >::iterator iter=fDefinitions.begin();
-  while(iter!=fDefinitions.end()){
-    TString myName=(*iter).first;
-    TString definition=(*iter).second;
-#ifdef DEBUG
-    cout << "Combo Name: " << myName << endl;
-#endif
 
-    TaDataElement* tobedefined = new TaDataElement(myName);
-    while( definition.Length()>0 ){
-      Ssiz_t next_plus = definition.Last('+');
-      Ssiz_t next_minus = definition.Last('-');
-      Ssiz_t length=definition.Length();
-      Ssiz_t head=0;
-      if(next_minus>next_plus)
-	head = next_minus;
-      if(next_plus>next_minus)
-	head = next_plus;
-
-      TString extracted = definition(head,length-head);
-#ifdef DEBUG
-      cout <<  extracted << endl;
-#endif
-      if(extracted.Contains('*')){
-	Ssiz_t aster_pos = extracted.First('*');
-	Ssiz_t form_length = extracted.Length();
-	Double_t factor = TString(extracted(0,aster_pos)).Atof();
-	TString elementName = extracted(aster_pos+1,form_length-(aster_pos+1));
-	TaDataElement* tobeconnected = fDataElementMap[elementName];
-	tobedefined->AddElement(factor,tobeconnected);
-#ifdef DEBUG
-	cout << factor <<"\t" << elementName << endl;
-#endif
-      }
-      else if(extracted(0,1)=="+"){
-	TString bare_name = extracted(1,length-head-1);
-  	TaDataElement* tobeconnected = fDataElementMap[bare_name];
-	tobedefined->AddElement(1,tobeconnected);
-#ifdef DEBUG
-	cout << +1 <<"\t" << extracted << endl;
-#endif
-      } else if(extracted(0,1)=="-"){
-	TString bare_name = extracted(1,length-head-1);
-  	TaDataElement* tobeconnected = fDataElementMap[bare_name];
-	tobedefined->AddElement(-1,tobeconnected);
-#ifdef DEBUG
-	cout << -1 <<"\t" << extracted << endl;
-#endif
-      }else{
-  	TaDataElement* tobeconnected = fDataElementMap[extracted];
-	tobedefined->AddElement(1,tobeconnected);
-#ifdef DEBUG
-	cout << 1 <<"\t" << extracted << endl;
-#endif
-      }
-      definition.Remove(head,length-head);
-    }
-
+vector<TaDataElement*> TaDitAna::BuildDataElementArray( vector<TaDefinition*> device_array ) {
+  vector<TaDefinition*>::iterator iter = device_array.begin();
+  vector<TaDataElement*> fArray_ret;
+  while(iter!=device_array.end()){
+    TString chname = (*iter)->GetName();
+    if( fDataElementMap.find(chname)!=fDataElementMap.end())
+      fArray_ret.push_back(fDataElementMap[chname]);
     iter++;
-    if(fDataElementMap.find(myName)==fDataElementMap.end())
-      fDataElementMap[myName]=tobedefined;
-  }
+  }  
+  return fArray_ret;
 }
 
 vector<TaDataElement*> TaDitAna::BuildDataElementArray( vector<TString> device_array ) {
@@ -218,14 +169,24 @@ vector<TaDataElement*> TaDitAna::BuildDataElementArray( vector<TString> device_a
   return fArray_ret;
 }
 
-
-void TaDitAna::RegisterRawDataElements(vector<TString> device_array){
+void TaDitAna::RegisterDataElements(vector<TString> device_array){
   vector<TString>::iterator iter = device_array.begin();
   while(iter!=device_array.end()){
     TaDataElement* new_ptr = new TaDataElement(*iter);
     if(fDataElementMap.find(*iter)==fDataElementMap.end()){
       fDataElementMap[*iter] = new_ptr; 
-      fRawDataElementArray.push_back(new_ptr);
+    }
+    iter++;
+  }
+}
+
+void TaDitAna::RegisterDataElements(vector<TaDefinition*> device_array){
+  vector<TaDefinition*>::iterator iter = device_array.begin();
+  while(iter!=device_array.end()){
+    TaDataElement* new_ptr = new TaDataElement((*iter));
+    TString chname = (*iter)->GetName();
+    if(fDataElementMap.find(chname)==fDataElementMap.end()){
+      fDataElementMap[chname] = new_ptr; 
     }
     iter++;
   }
@@ -235,9 +196,9 @@ void TaDitAna::RegisterBranchAddress(TTree *fTree){
 #ifdef NOISY
   cout << __PRETTY_FUNCTION__ << endl;
 #endif
-  vector<TaDataElement*>::iterator iter = fRawDataElementArray.begin();
-  while(iter!=fRawDataElementArray.end()){
-    TString myName=(*iter)->GetName();
+  auto iter = fDataElementMap.begin();
+  while(iter!=fDataElementMap.end()){
+    TString myName=(*iter).first;
     if(myName=="bmod_trim7")
       myName="bmod_ramp";
     TBranch* fBranch = fTree->GetBranch(myName);
@@ -246,7 +207,7 @@ void TaDitAna::RegisterBranchAddress(TTree *fTree){
       iter++;
       continue;
     }
-    (*iter)->RegisterBranchAddress(fBranch);
+    (*iter).second->RegisterBranchAddress(fBranch);
     fTree->SetBranchStatus(myName,1);
     iter++;
   }
@@ -263,6 +224,7 @@ void TaDitAna::PrintSummary(TaOutput* aOutput){
   fPrinter->Print(std::cout);
   fPrinter->Close();
 }
+ 
 void TaDitAna::WriteToTree(TaOutput* aOutput){
 #ifdef NOISY
   cout << __PRETTY_FUNCTION__<< endl;
@@ -325,4 +287,28 @@ void TaDitAna::WriteToTree(TaOutput* aOutput){
       iter_cyc++;
     }
   }
+}
+
+void TaDitAna::ConnectDataElements(){
+#ifdef NOISY
+  cout << __PRETTY_FUNCTION__ << endl;
+#endif
+  auto iter  = fDataElementMap.begin();
+  while(iter!=fDataElementMap.end()){
+    TaDataElement* de_ptr = (*iter).second;
+    if(de_ptr->HasUserDefinition()){
+      cout << (*iter).first << " : ";
+      vector<Double_t> fPrefactors = de_ptr->GetFactorArray();
+      vector<TString> fNameArray = de_ptr->GetRawNameList();
+      Int_t nelem = fPrefactors.size();
+      for(int i=0;i<nelem;i++){
+	cout << fPrefactors[i] << " * " << fNameArray[i] << "\t";
+	de_ptr->AddElement(fPrefactors[i],
+			   fDataElementMap[fNameArray[i]]);
+      }
+    }
+    iter++;
+  }
+
+  // FIXME: remap ramp phase for coil
 }

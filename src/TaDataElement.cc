@@ -24,7 +24,7 @@ void TaDataElement::RegisterBranchAddress(TBranch* fBranch_ptr){
 
 Double_t TaDataElement::GetHwSum(){
   Int_t nele = fElementArray.size();
-  if(nele>=1){
+  if(kUserDefined){
     fhw_sum =0.0;
     for(int i=0;i<nele;i++){
       double factor = fElementArray[i].first;
@@ -47,7 +47,7 @@ Double_t TaDataElement::TestDeviceErrorCode(Int_t ErrorMask){
 
 Double_t TaDataElement::GetDeviceErrorCode(){
   Int_t nele = fElementArray.size();
-  if(nele>=1){
+  if(kUserDefined){
     fDevice_Error_Code=0.0;
     Int_t ret_error_code=0;
     for(int i=0;i<nele;i++){
