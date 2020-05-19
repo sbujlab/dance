@@ -5,10 +5,13 @@ void CompareResidual(){
   TMultiGraph *mg_usl = new TMultiGraph();
   TMultiGraph *mg_usr = new TMultiGraph();
   
-  vector<TString> graph_legend={"13467 cyclewise","35467 cyclewise","overconstraint cyclewise"};
-  vector<TString> file_tag={"dit_slope1","dit_slope3","dit_slope_lsq"};
+  // vector<TString> graph_legend={"13467 cyclewise","35467 cyclewise","overconstraint cyclewise"};
+  // vector<TString> file_tag={"dit_slope1","dit_slope3","dit_slope_lsq"};
+  vector<TString> graph_legend={"5x5 slug avg","overconstraint slug avg","overconstraint run avg", "overconstraint cyclewise"};
+  vector<TString> file_tag={"slug_5x5_merged","slug_ovcn","run_ovcn","dit_slope_lsq"};
 
   TLegend *leg = new TLegend(0.95,0.95,0.65,0.65);
+  TLegend *leg2 = new TLegend(0.95,0.95,0.65,0.65);
   Int_t ntype = file_tag.size();
   for(int itype=0;itype<ntype;itype++){
     cout << file_tag[itype]  << endl;
@@ -18,6 +21,8 @@ void CompareResidual(){
     vector<Double_t> fx_usr;
     for(int i=1;i<=94;i++){
       TFile *input = TFile::Open(Form("./residuals/slug%d_%s.root",i,file_tag[itype].Data()));
+      if(input==NULL)
+	continue;
       TTree *res = (TTree*)input->Get("res");
       if(res==NULL)
 	continue;
@@ -39,8 +44,12 @@ void CompareResidual(){
       if(npt!=0){
 	fres_usl.push_back( sqrt(res_sq_sum/npt) );
 	fx_usl.push_back(i);
+	cout << "slug " << i
+	     << " res_sq_sum:" << sqrt(res_sq_sum)*1e6 << "\t"
+	     << " npt:"<<npt << "\t"
+	     << " res_norm:" << sqrt(res_sq_sum/npt)*1e6 << endl;
       }else
-	cout << "slug " << i << "has zero pt" << endl;
+	cout << "slug " << i << " has zero pt" << endl;
 
       npt=res->Draw("usr_sq","usr_sq>0"+redundant_cut,"goff");
       y_ptr = res->GetV1();
@@ -51,7 +60,9 @@ void CompareResidual(){
       if(npt!=0){
 	fres_usr.push_back( sqrt(res_sq_sum/npt) );
 	fx_usr.push_back(i);
-      }
+      }else
+	cout << "slug " << i << " has zero pt" << endl;
+
       input->Close();
     }
     TGraph* gusl = GraphVector(fres_usl,fx_usl,1e6);
@@ -61,7 +72,6 @@ void CompareResidual(){
     gusl->SetMarkerStyle(20);
     gusl->SetMarkerSize(0.7);
     mg_usl->Add(gusl,"lp");
-
     TGraph* gusr = GraphVector(fres_usr,fx_usr,1e6);
     gusr->SetMarkerColor(itype+1);
     gusr->SetLineColor(itype+1);
@@ -71,6 +81,7 @@ void CompareResidual(){
     mg_usr->Add(gusr,"lp");
 
     leg->AddEntry(gusl,graph_legend[itype],"lp");
+    leg2->AddEntry(gusr,graph_legend[itype],"lp");
   }
   TCanvas *c1 = new TCanvas("c1","c1",1200,600);
   c1->cd();
@@ -78,7 +89,7 @@ void CompareResidual(){
   mg_usl->SetTitle("usl residual sensitivity;Slug; ppm/count");
   double ymax= mg_usl->GetYaxis()->GetXmax();
   double ymin=mg_usl->GetYaxis()->GetXmin();
-  mg_usl->GetYaxis()->SetRangeUser(ymin,ymax+0.2*(ymax-ymin));
+  mg_usl->GetYaxis()->SetRangeUser(ymin,ymax+0.33*(ymax-ymin));
   leg->Draw("same");
   TCanvas *c2 = new TCanvas("c2","c2",1200,600);
   c2->cd();
@@ -86,8 +97,6 @@ void CompareResidual(){
   mg_usr->SetTitle("usr residual sensitivity;Slug; ppm/count");
   ymax= mg_usr->GetYaxis()->GetXmax();
   ymin=mg_usr->GetYaxis()->GetXmin();
-  mg_usr->GetYaxis()->SetRangeUser(ymin,ymax+0.2*(ymax-ymin));
-
-
-  leg->Draw("same");
+  mg_usr->GetYaxis()->SetRangeUser(ymin,ymax+0.33*(ymax-ymin));
+  leg2->Draw("same");
 }
