@@ -194,8 +194,8 @@ void ResidualSensByCycle(Int_t slug_number ,Bool_t kOverConstraint){
 	      hPull[idet*ncoil+icoil].Fill(residual*1e6);
 	    }
 	  } // end of det loop
+	  residual_tree->Fill();
 	} // end of if its good coil
-	residual_tree->Fill();
       } // end of coil loop
     }// end of if kMatch
   } // end of event loop
