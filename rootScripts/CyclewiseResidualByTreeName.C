@@ -19,20 +19,21 @@ void CyclewiseResidualByTreeName(Int_t slug_number ,TString tree_name){
   map<Int_t,Int_t> fArmMap = LoadArmMapBySlug(slug_number);
   vector<Int_t> fRunList = LoadRunListBySlug(slug_number);
   map< Int_t, vector<Int_t> > fblmap = LoadBadCycleList();
-  
+
   TChain *slope_tree = new TChain(tree_name);
+  TChain *sens = new TChain("sens");
   Int_t nrun = fRunList.size();
   for(int i=0;i<nrun;i++){
-    TString filename=Form("./dit-coeffs/prexPrompt_ditcoeffs_%d.root",
-			  fRunList[i]);
-    slope_tree->Add(filename);
-  }
-
-  TChain *sens = new TChain("sens");
-  for(int i=0;i<nrun;i++){
-    TString filename=Form("./dit-coeffs/prexPrompt_ditcoeffs_%d.root",
-			  fRunList[i]);
-    sens->Add(filename);
+    Int_t seg_number =0;    
+    TString filename=Form("./dit-coeffs/prexPrompt_ditcoeffs_%d.%03d.root",
+			  fRunList[i],seg_number);
+    while(gSystem->AccessPathName(filename)==0){
+      slope_tree->Add(filename);
+      sens->Add(filename);
+      seg_number++;
+      filename=Form("./dit-coeffs/prexPrompt_ditcoeffs_%d.%03d.root",
+		    fRunList[i],seg_number);
+    }
   }
   sens->AddFriend(slope_tree);
 

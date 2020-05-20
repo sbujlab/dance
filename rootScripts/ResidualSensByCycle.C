@@ -25,20 +25,24 @@ void ResidualSensByCycle(Int_t slug_number ,Bool_t kOverConstraint){
   if(kOverConstraint)
     tree_name="dit_slope_lsq";
   
+  cout << " -- Friending tree " << endl;
   TChain *slope_tree = new TChain(tree_name);
+  TChain *sens = new TChain("sens");
   Int_t nrun = fRunList.size();
   for(int i=0;i<nrun;i++){
-    TString filename=Form("./dit-coeffs/prexPrompt_ditcoeffs_%d.root",
-			  fRunList[i]);
-    slope_tree->Add(filename);
+    Int_t seg_number =0;    
+    TString filename=Form("./dit-coeffs/prexPrompt_ditcoeffs_%d.%03d.root",
+			  fRunList[i],seg_number);
+    while(gSystem->AccessPathName(filename)==0){
+      slope_tree->Add(filename);
+      sens->Add(filename);
+      cout << " --  " << filename << endl;
+      seg_number++;
+      filename=Form("./dit-coeffs/prexPrompt_ditcoeffs_%d.%03d.root",
+			  fRunList[i],seg_number);
+    }
   }
 
-  TChain *sens = new TChain("sens");
-  for(int i=0;i<nrun;i++){
-    TString filename=Form("./dit-coeffs/prexPrompt_ditcoeffs_%d.root",
-			  fRunList[i]);
-    sens->Add(filename);
-  }
   sens->AddFriend(slope_tree);
 
   vector<Int_t> coil_index;

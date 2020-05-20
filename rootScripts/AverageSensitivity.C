@@ -28,9 +28,14 @@ void AverageSensitivity(Int_t slug_id, Bool_t kMatrixOutput){
   }
 
   vector<TString> device_array;
-  vector<TString> prex_set1={"bpm4aX","bpm4aY","bpm4eX","bpm4eY","bpm12X","bpm8X","bpm1X"};
-  vector<TString> prex_set2={"bpm4aX","bpm4aY","bpm4eX","bpm4eY","bpm11X12X","bpm11X","bpm12X","bpm1X","bpm16X"};
-  vector<TString> crex_set={"bpm1X","bpm4aY","bpm4eX","bpm4eY","bpm12X","bpm11X","bpm4aX"};
+  vector<TString> prex_set1={"bpm4aX","bpm4aY","bpm4eX","bpm4eY",
+			     "bpm12X","bpm12Y","bpm8X","bpm8Y","bpm1X","bpm1Y"};
+  vector<TString> prex_set2={"bpm4aX","bpm4aY","bpm4eX","bpm4eY","bpm11X12X",
+			     "bpm16X","bpm16Y","bpm12X","bpm12Y","bpm11X","bpm11Y",
+			     "bpm1X","bpm1Y"};
+  vector<TString> crex_set={"bpm4aX","bpm4aY","bpm4eX","bpm4eY",
+			    "bpm16X","bpm16Y","bpm12X","bpm12Y","bpm11X","bpm11Y",
+			    "bpm1X","bpm1Y"};
   if(slug_id<=2)
     device_array = prex_set1;
   else if(slug_id<=94 || slug_id==501)
@@ -61,9 +66,15 @@ void AverageSensitivity(Int_t slug_id, Bool_t kMatrixOutput){
   TChain *sens_tree = new TChain("sens");
   Int_t nrun = fRunList.size();
   for(int i=0;i<nrun;i++){
-    TString filename=Form("./dit-coeffs/prexPrompt_ditcoeffs_%d.000.root",
-			  fRunList[i]);
-    sens_tree->Add(filename);
+    Int_t seg_number =0;
+    TString filename=Form("./dit-coeffs/prexPrompt_ditcoeffs_%d.%03d.root",
+			  fRunList[i],seg_number);
+    while(gSystem->AccessPathName(filename)==0){
+      sens_tree->Add(filename);
+      seg_number++;
+      filename=Form("./dit-coeffs/prexPrompt_ditcoeffs_%d.%03d.root",
+		    fRunList[i],seg_number);
+    }
   }
   Int_t nCycles = sens_tree ->GetEntries();
   if(nCycles==0)

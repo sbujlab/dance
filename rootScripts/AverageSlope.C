@@ -66,9 +66,16 @@ void AverageSlope(Int_t slug_id,Bool_t kMatrixOutput){
   TChain *slope_tree = new TChain(tree_name);
   Int_t nrun = fRunList.size();
   for(int i=0;i<nrun;i++){
-    TString filename=Form("./dit-coeffs/prexPrompt_ditcoeffs_%d.root",
-			  fRunList[i]);
-    slope_tree->Add(filename);
+    Int_t seg_number =0;
+    TString filename=Form("./dit-coeffs/prexPrompt_ditcoeffs_%d.%03d.root",
+			  fRunList[i],seg_number);
+    while(gSystem->AccessPathName(filename)==0){
+      slope_tree->Add(filename);
+      seg_number++;
+      filename=Form("./dit-coeffs/prexPrompt_ditcoeffs_%d.%03d.root",
+		    fRunList[i],seg_number);
+    }
+
   }
 
   Int_t nCycles = slope_tree ->GetEntries();

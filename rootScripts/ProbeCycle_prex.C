@@ -15,9 +15,15 @@ void ProbeCycle_prex(Int_t slug_number){
   TChain *sens = new TChain("sens");
   Int_t nrun = fRunList.size();
   for(int i=0;i<nrun;i++){
-    TString filename=Form("./dit-coeffs/prexPrompt_ditcoeffs_%d.root",
-			  fRunList[i]);
-    sens->Add(filename);
+    Int_t seg_number =0;    
+    TString filename=Form("./dit-coeffs/prexPrompt_ditcoeffs_%d.%03d.root",
+			  fRunList[i],seg_number);
+    while(gSystem->AccessPathName(filename)==0){
+      sens->Add(filename);
+      seg_number++;
+      filename=Form("./dit-coeffs/prexPrompt_ditcoeffs_%d.%03d.root",
+		    fRunList[i],seg_number);
+    }
   }
 
   vector<Int_t> coil_index;
