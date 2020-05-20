@@ -23,14 +23,18 @@ do
     echo $(($run_num))
     echo $run_num
 
-    conf="lagrange.conf"
+    conf="sandbox-respin.conf"
     if [ $(($run_num)) -ge 3390 ]
     then
-      conf="lagrange.3390-.conf"
+      conf="sandbox-respin.3390-.conf"
+    fi
+    if [ $(($run_num)) -ge 3404 ]
+    then
+      conf="sandbox-respin.3404-.conf"
     fi
     if [ $(($run_num)) -ge 4735 ]
     then
-      conf="lagrange.4735-.conf"
+      conf="sandbox-respin.4735-.conf"
     fi
 
     ./dance \
