@@ -28,6 +28,10 @@ do
     then
       sensConf="sens.3390-.conf"
     fi
+    if [ $(($run_num)) -ge 3404 ]
+    then
+      sensConf="sens.3404-.conf"
+    fi
     if [ $(($run_num)) -ge 3803 ]
     then
       sensConf="sens.3803-.conf"
