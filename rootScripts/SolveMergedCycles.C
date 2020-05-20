@@ -286,9 +286,9 @@ void SolveMergedCycles(Int_t slug_id,Bool_t kMatrixOutput){
   TFile *cycle_input = TFile::Open(input_name);
   TDirectory *input_dir = cycle_input->GetDirectory("graph");
 
-  TString input_name_merged = Form("./slopes/slug%d_dit_slope_merged_cycle_5coils.root",slug_id);
-  TFile *merged_input = TFile::Open(input_name_merged);
-  TDirectory *input_dir_merged = merged_input->GetDirectory("graph");
+  // TString input_name_merged = Form("./slopes/slug%d_dit_slope_merged_cycle_5coils.root",slug_id);
+  // TFile *merged_input = TFile::Open(input_name_merged);
+  // TDirectory *input_dir_merged = merged_input->GetDirectory("graph");
 
   // ++++++++++ Plots
   cout << " Making Plots " << endl;
@@ -333,31 +333,35 @@ void SolveMergedCycles(Int_t slug_id,Bool_t kMatrixOutput){
 	}
       }
       TMultiGraph* cycle_mg = (TMultiGraph*)input_dir->Get(title);
-      // fmg->Add(cycle_mg);
+      fmg->Add(cycle_mg);
       TIter next(cycle_mg->GetListOfGraphs());
       TGraph *gint;
       
       while ( (gint=(TGraph*)next()) ){
       	if((gint->GetMarkerStyle())==47 && gint->GetMarkerColor()==kBlue){
-      	  leg.AddEntry(gint,"5x5 cyclewise","p");
-      	  fmg->Add(gint,"p");
-      	}
-      }
+	  leg.AddEntry(gint,"5x5 cyclewise","p");
+	  if((gint->GetLineStyle())==1 && gint->GetLineColor()==kBlue){
+	    if(!k5x5SlugDone){
+	      leg.AddEntry(gint,"5x5 slug avg.","l");
+	      k5x5SlugDone=kTRUE;
+	    }	  
+	  }
+	}
       
-      TMultiGraph* merged_mg = (TMultiGraph*)input_dir_merged->Get(title);
-      TIter next_merged(merged_mg->GetListOfGraphs());
-      Bool_t k5coilSlugMergedDone=kFALSE;
-      while ( (gint=(TGraph*)next_merged()) ){
-      	if((gint->GetLineStyle())==7 && gint->GetLineColor()==kRed){
-      	  gint->SetLineStyle(1);
-      	  gint->SetLineColor(kBlue);
-      	  fmg->Add(gint);
-      	  if(!k5coilSlugMergedDone){
-      	    leg.AddEntry(gint,"5x5 slug merged","l");
-      	    k5coilSlugMergedDone=kTRUE;
-      	  }
-      	}
-      }
+      // TMultiGraph* merged_mg = (TMultiGraph*)input_dir_merged->Get(title);
+      // TIter next_merged(merged_mg->GetListOfGraphs());
+      // Bool_t k5coilSlugMergedDone=kFALSE;
+      // while ( (gint=(TGraph*)next_merged()) ){
+      // 	if((gint->GetLineStyle())==7 && gint->GetLineColor()==kRed){
+      // 	  gint->SetLineStyle(1);
+      // 	  gint->SetLineColor(kBlue);
+      // 	  fmg->Add(gint);
+      // 	  if(!k5coilSlugMergedDone){
+      // 	    leg.AddEntry(gint,"5x5 slug merged","l");
+      // 	    k5coilSlugMergedDone=kTRUE;
+      // 	  }
+      // 	}
+      // }
       
       fmg->Draw("A");
       fmg->SetTitle(title);
