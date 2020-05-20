@@ -189,7 +189,7 @@ void SolveMergedCycles_5Coils(Int_t slug_id,Bool_t kMatrixOutput){
 
   for(int isplit=0;isplit<nSplits;isplit++){
     ofstream mapfile;
-    TString fullpath="./mapfiles_ovcn/";
+    TString fullpath="./mapfiles_5coils/";
     TString range_tag;
     int low = range_low[isplit];
     int up = range_up[isplit];

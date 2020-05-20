@@ -5,7 +5,7 @@ void AverageSlope(Int_t slug_id,Bool_t kMatrixOutput=kFALSE);
 void AverageSlope(){
   TString tree_name;
   for(int i=1;i<=94;i++){
-    AverageSlope(i);
+    AverageSlope(i,kTRUE);
   }
 }
 void AverageSlope(Int_t slug_id,Bool_t kMatrixOutput){
@@ -285,8 +285,7 @@ void AverageSlope(Int_t slug_id,Bool_t kMatrixOutput){
 	for(int imon=0;imon<nMon;imon++)
 	  slope_matrix[idet][imon] = fAccumulatorArray[isplit][idet*nMon+imon].GetMean1();
   
-      TString out_filename = Form("./matrices/prex_%s_matrix.%s.root",
-				  tree_name.Data(),
+      TString out_filename = Form("./matrices/prex_avg_slope_matrix.%s.root",
 				  range_tag.Data());
 
       TFile *matrix_output = TFile::Open(out_filename,"RECREATE");

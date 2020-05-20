@@ -4,7 +4,7 @@
 void AverageSensitivity(Int_t slug_id, Bool_t kMatrixOutput=kFALSE);
 void AverageSensitivity(){
   for(int i=1;i<=94;i++)
-    AverageSensitivity(i,kFALSE);
+    AverageSensitivity(i,kTRUE);
 }
 void AverageSensitivity(Int_t slug_id, Bool_t kMatrixOutput){
   Bool_t kCrex = kFALSE;
