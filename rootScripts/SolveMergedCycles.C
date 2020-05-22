@@ -338,15 +338,15 @@ void SolveMergedCycles(Int_t slug_id,Bool_t kMatrixOutput){
       TGraph *gint;
       
       while ( (gint=(TGraph*)next()) ){
-      	if((gint->GetMarkerStyle())==47 && gint->GetMarkerColor()==kBlue){
+      	if((gint->GetMarkerStyle())==47 && gint->GetMarkerColor()==kBlue)
 	  leg.AddEntry(gint,"5x5 cyclewise","p");
-	  if((gint->GetLineStyle())==1 && gint->GetLineColor()==kBlue){
-	    if(!k5x5SlugDone){
-	      leg.AddEntry(gint,"5x5 slug avg.","l");
-	      k5x5SlugDone=kTRUE;
-	    }	  
-	  }
+	if((gint->GetLineStyle())==1 && gint->GetLineColor()==kBlue){
+	  if(!k5x5SlugDone){
+	    leg.AddEntry(gint,"5x5 slug avg.","l");
+	    k5x5SlugDone=kTRUE;
+	  }	  
 	}
+      }
       
       // TMultiGraph* merged_mg = (TMultiGraph*)input_dir_merged->Get(title);
       // TIter next_merged(merged_mg->GetListOfGraphs());

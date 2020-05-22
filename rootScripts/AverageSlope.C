@@ -99,7 +99,7 @@ void AverageSlope(Int_t slug_id,Bool_t kMatrixOutput){
 
   vector<TaAccumulator> fAccumulator(nMon*nDet);
   vector< vector<TaAccumulator> > fAccumulatorArray(nSplits,fAccumulator);
-  
+  vector< Bool_t > kSplitsValid(nSplits);
   vector<Int_t> fRunLabel;
   vector<Int_t> fCycleNumber;
   vector<Double_t> fRunLabelXcord;
@@ -138,8 +138,19 @@ void AverageSlope(Int_t slug_id,Bool_t kMatrixOutput){
   } // end of ievt loop
   
   // ++++++++++
-
   for(int isplit=0;isplit<nSplits;isplit++){
+    Int_t kCounter=0;
+    for(int idet=0;idet<nDet;idet++)
+      for(int imon=0;imon<nMon;imon++)
+	kCounter +=  fAccumulatorArray[isplit][idet*nMon+imon].GetN();
+    if(kCounter==0){
+      for(int idet=0;idet<nDet;idet++){
+	for(int imon=0;imon<nMon;imon++){
+	  fAveragedSlope[idet*nMon+imon].push_back(fAccumulatorArray[isplit][idet*nMon+imon].GetMean1());
+	}
+      }
+      continue;
+    }
     ofstream mapfile;
     TString fullpath="./mapfiles/";
     TString range_tag;
