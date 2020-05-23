@@ -60,7 +60,7 @@ void ResidualSensByCycle(Int_t slug_number ,Bool_t kOverConstraint){
   vector<TString> mon_set2={"bpm4aX","bpm4eX","bpm4aY","bpm4eY","bpm12X"}; // run 3130-3403
   vector<TString> mon_array;
 
-  if(slug_number<=3)
+  if(slug_number<=2)
     mon_array = mon_set2;
   else if(slug_number<=94 || slug_number==501)
     mon_array = mon_set1;

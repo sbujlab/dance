@@ -34,7 +34,7 @@ void SolveMergedCycles_5Coils(Int_t slug_id,Bool_t kMatrixOutput){
   vector<TString> at_array={"atl1","atl2","atr1","atr2"};
   vector<TString> mon_array={"bpm4aX","bpm4eX","bpm4aY","bpm4eY"};
   vector<TString> mon1x_array={"bpm1X","bpm4eX","bpm4aY","bpm4eY","bpm12X"};
-  if(slug_id<=3)
+  if(slug_id<=2)
     mon_array.push_back("bpm12X");
   else if(slug_id<=94 || slug_id==501)
     mon_array.push_back("bpm11X12X");

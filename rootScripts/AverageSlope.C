@@ -45,7 +45,7 @@ void AverageSlope(Int_t slug_id,Bool_t kMatrixOutput){
 			     "sam5","sam6","sam7","sam8"};
   vector<TString> mon_array={"bpm4aX","bpm4eX","bpm4aY","bpm4eY"};
   vector<TString> mon1x_array={"bpm1X","bpm4eX","bpm4aY","bpm4eY","bpm12X"};
-  if(slug_id<=3)
+  if(slug_id<=2)
     mon_array.push_back("bpm12X");
   else if(slug_id<=94 || slug_id==501)
     mon_array.push_back("bpm11X12X");
