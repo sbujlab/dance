@@ -55,6 +55,7 @@ private:
   Bool_t isExternalConstraint;
 
   Int_t minirun_size;
+  Bool_t kUseBurstCounter;
   vector<pair<Int_t, Int_t> > minirun_range;
   Int_t nEntries;
   Bool_t kMiniOnly;

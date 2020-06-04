@@ -31,7 +31,14 @@ TaInput::TaInput(TaConfig *aConfig){
   }
   input_path=aConfig->GetConfigParameter("input_path");
   input_prefix=aConfig->GetConfigParameter("input_prefix");
-  minirun_size = (aConfig->GetConfigParameter("minirun_size")).Atof();
+  TString cMinirun_size =(aConfig->GetConfigParameter("minirun_size"));
+  if(cMinirun_size=="burst-counter"){
+    kUseBurstCounter = kTRUE;
+    cout << " -- minirun will be defined by burst counter " << endl;
+  }else{
+    minirun_size = cMinirun_size.Atof();
+    kUseBurstCounter = kFALSE;
+  }
   TString output_mini_flag = aConfig->GetConfigParameter("mini_only");
   if(output_mini_flag=="on")
     kMiniOnly = kTRUE;
@@ -146,7 +153,29 @@ void TaInput::WriteRawChannels(TaOutput *aOutput){
   Int_t mini_start =0;
   Int_t mini_end =0;
   Bool_t isGoodPattern=kFALSE;
+  Int_t fCurrentBurst = 0;
+  Short_t fBurstCounter;
+  mul_tree->SetBranchStatus("BurstCounter",1);
+  mul_tree->SetBranchAddress("BurstCounter",&fBurstCounter);
   while((mul_tree->GetEntry(ievt))>0){
+
+    if(kUseBurstCounter && fBurstCounter > fCurrentBurst){
+      cout << "fCurrentBurst=" << fCurrentBurst << endl;
+      fCurrentBurst  = fBurstCounter;
+      mini_end = ievt-1;
+      minirun_range.push_back(make_pair(mini_start,mini_end));
+      cout << " -- Mini-run ends at event: " << mini_end << endl;
+      mini_start = mini_end+1;
+      cout << " -- Next Mini-run starts at event: " << mini_start << endl;
+	
+      for(int ich=0;ich<nch;ich++){
+	fChannelArray[ich]->UpdateMiniStat();
+	fChannelArray[ich]->ResetMiniAccumulator();
+      }
+      aOutput->FillTree("mini");
+      mini_id++;
+    }
+
     if(elist_mul->GetIndex(ievt)!=-1){
       isGoodPattern=kTRUE;
       goodCounts++;
@@ -168,8 +197,8 @@ void TaInput::WriteRawChannels(TaOutput *aOutput){
     if(!kMiniOnly)
       aOutput->FillTree("mul");
     ievt++;
-
-    if(goodCounts==minirun_size){
+    
+    if(goodCounts==minirun_size && !kUseBurstCounter){
       mini_end = ievt-1;
       minirun_range.push_back(make_pair(mini_start,mini_end));
       cout << " -- Mini-run ends at event: " << mini_end << endl;
