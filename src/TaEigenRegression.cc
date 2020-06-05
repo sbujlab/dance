@@ -48,6 +48,7 @@ void TaEigenRegression::Process(TaOutput *fOutput){
   }
   for(int ich=0;ich<nIV;ich++){
     fEigenVar[ich]->ConnectChannels(fIndependentVar,fvector);
+    fEigenVar[ich]->ConstructSlopeBranch(fOutput,"mini_"+tree_name); // A very nice trick
   }
 
   for(int ich=0;ich<nDV;ich++){
