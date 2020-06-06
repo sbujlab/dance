@@ -146,6 +146,7 @@ void TaInput::WriteRawChannels(TaOutput *aOutput){
   Double_t mini_id=0;
   aOutput->ConstructTreeBranch("sum","run",run_number);
   aOutput->ConstructTreeBranch("mini","mini",mini_id);
+  aOutput->ConstructTreeBranch("mini","run",run_number);
   if(!kMiniOnly)
     aOutput->ConstructTreeBranch("mul","mini",mini_id);
   Int_t ievt =0;

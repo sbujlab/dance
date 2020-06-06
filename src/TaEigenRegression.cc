@@ -37,7 +37,7 @@ void TaEigenRegression::Process(TaOutput *fOutput){
 
   TString leaflist = "hw_sum/D:block0:block1:block2:block3";
   for(int ich=0;ich<nIV;ich++){
-    TaChannel* aEigenVar = new TaChannel(tree_name,Form("evMon%d",ich));
+    TaChannel* aEigenVar = new TaChannel(tree_name,Form("diff_evMon%d",ich));
     fEigenVar.push_back(aEigenVar);
   }
   for(int ich=0;ich<nIV;ich++){
