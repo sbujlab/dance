@@ -121,10 +121,24 @@ vector<vector<Double_t> >  TaLagrangian::Solve(TMatrixD CovDM, TMatrixD CovMM){
   TMatrixD solutionM = invlhsM*rhsM;
   TMatrixD slopeM(nMon,nDet);
   slopeM=solutionM.GetSub(0,nMon-1,0,nDet-1);
+
+#ifdef NOISY	
+  cout << " -- Idiot Check (nCoil x nDet) " << endl;
+  TMatrixD check(nCoil,nDet);
+  check =  monConstraints*slopeM;
+  check.Print();
+  detConstraints.Print();
+  cout << " -- Idiot Check (nCoil x nDet): Lambda " << endl;
+  TMatrixD LagrM(nCoil,nDet);
+  LagrM=solutionM.GetSub(nMon,nMon+nCoil-1,0,nDet-1);
+  LagrM.Print();
+#endif
+
 #ifdef NOISY	
   cout << " -- Slopes Matrix (nMon x nDet) " << endl;
   slopeM.Print();
 #endif
+
   vector<vector<Double_t> > fSlopesContainer;
   
   auto iter_dv = sDVlist.begin();
