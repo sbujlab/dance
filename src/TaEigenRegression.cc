@@ -66,7 +66,9 @@ void TaEigenRegression::Process(TaOutput *fOutput){
     TMatrixDSymEigen symCovMM_eig(symCovMM);
     TMatrixD eigen_vector = symCovMM_eig.GetEigenVectors();
     TVectorD eigen_values = symCovMM_eig.GetEigenValues();
+#ifdef NOISY
     eigen_vector.Print();
+#endif
     TMatrixD lambda(nIV,nIV);
     for(int i=0;i<nIV;i++)
       for(int j=0;j<nIV;j++)
@@ -79,7 +81,9 @@ void TaEigenRegression::Process(TaOutput *fOutput){
     eigen_vector_trans.T();
     CovDM_eigen = eigen_vector_trans*CovDM;
     vector<vector<Double_t> > fSlopes = Solve(CovDM_eigen,lambda);
+#ifdef NOISY
     lambda.Print();
+#endif
     for(int idv=0;idv<nDV;idv++)
       for(int iiv=0;iiv<nIV;iiv++)
 	coeff[idv][iiv] = fSlopes[idv][iiv];
