@@ -79,6 +79,12 @@ void TaOutput::ConstructTreeBranch(TString treeName,
   ConstructTreeBranch(treeName,branchName,"hw_sum/D",&value);
 }
 
+void TaOutput::ConstructTreeBranch(TString treeName, 
+				   TString branchName,
+				   Int_t &value){
+  ConstructTreeBranch(treeName,branchName,branchName+"/I",&value);
+}
+
 void TaOutput::ConstructStatTreeBranch(TString treeName, 
 				       TString branchName,
 				       STAT &value){
