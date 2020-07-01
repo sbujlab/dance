@@ -13,7 +13,7 @@ Bool_t TaConfig::ParseFile(TString fileName){
 #ifdef NOISY
   cout << __PRETTY_FUNCTION__ << endl;
 #endif
-  configName=fileName;
+  configName=FindConfigByRange(fileName);
   ifstream configFile;
   cout << " -- Opening " << configName << endl;
   configFile.open(configName.Data());
@@ -237,27 +237,46 @@ Bool_t TaConfig::CheckRunRange(TString input){
   TString base_name = input;
   Ssiz_t last_slash = base_name.Last('/');
   base_name.Remove(0,last_slash+1);
-
   Ssiz_t first_dot = base_name.First('.');
   Ssiz_t last_dot = base_name.Last('.');
-
   Bool_t kFound = kFALSE;
   TString range = base_name(first_dot+1,last_dot-first_dot);
   if(range.Contains('-')){
     Ssiz_t dash_pos = range.First('-');
     TString lower = range(0,dash_pos);
     TString upper = range(dash_pos+1,range.Length()-(dash_pos+1));
-    if(run_number<=upper.Atoi() && run_number>=lower.Atoi())
-      kFound = kTRUE;
+    Int_t kUpper, kLower;
+    if(upper==".")
+      kUpper = 10000;
+    else
+      kUpper = upper.Atoi();
+    kLower = lower.Atoi();
+    
+    if(kLower<=run_number && kUpper>=run_number){
+      if( kLower>kLowerBound ){
+	kFound = kTRUE;
+	kLowerBound = kLower;
+      }
+      if( kUpper<kUpperBound){
+	kFound = kTRUE;
+	kUpperBound = kUpper;
+      }
+    }
   } else{
-    if(run_number == range.Atoi())
+    if(run_number == range.Atoi()){
+      kLowerBound = run_number;
+      kUpperBound = run_number;
       kFound = kTRUE;
+    }
   }
   return kFound;
 }
 
 TString TaConfig::FindExtRootfile(TString ext_format){
-  TString ext_filename;
+  kLowerBound = 0;
+  kUpperBound = 100000;
+
+  TString ext_filename = ext_format;
   TString target_dir = ext_format;
   Ssiz_t length = target_dir.Length();
   Ssiz_t last_slash = target_dir.Last('/');
@@ -278,16 +297,69 @@ TString TaConfig::FindExtRootfile(TString ext_format){
       if(name_buff.Contains(ext_prefix)){
 	if(CheckRunRange(name_buff)){
 	  ext_filename = target_dir+name_buff;
-	  cout << " -- Found run range specified matrix: \n -- " 
+	  cout << " -- Found run range specified matrix: " 
 	       << ext_filename << endl;
-	  return ext_filename;
 	}
       }
-
     }// end of fileList Loop;
   }
-  cout << " -- Using default input  matrix: \n -- " 
-       << ext_format << endl;
+  cout << " -- Using  input  matrix:  " 
+       << ext_filename << endl;
 
-  return ext_format;
+  return ext_filename;
+
+}
+
+TString TaConfig::FindConfigByRange(TString conf_format){
+  kLowerBound = 0;
+  kUpperBound = 100000;
+
+  TString conf_filename = conf_format;
+  TString target_dir = conf_format;
+  Ssiz_t length = target_dir.Length();
+  Ssiz_t last_slash = target_dir.Last('/');
+  Ssiz_t last_dot = target_dir.Last('.');
+  TString conf_prefix = target_dir(last_slash+1,last_dot-last_slash);
+  target_dir.Remove(last_slash+1, length-(last_slash+1) );
+  const char* dir_name = "";
+  const char* path= target_dir.Data();
+  TSystemDirectory *sysDir = new TSystemDirectory(dir_name,path);
+  TList* fileList = sysDir->GetListOfFiles();
+  if(fileList){
+    TIter next(fileList);
+    TSystemFile* sysfile;
+    while( (sysfile=(TSystemFile*)next()) ){
+      if(sysfile->IsDirectory())
+	continue;
+      TString name_buff = sysfile->GetName();
+      if(name_buff.Contains("~"))
+	continue;
+      if(name_buff.Contains(conf_prefix)){
+	if(CheckRunRange(name_buff)){
+	  conf_filename = target_dir+name_buff;
+	  cout << " -- Found run range specified config:  " 
+	       << conf_filename << endl;
+	}
+      }
+    }// end of fileList Loop;
+  }
+  cout << " -- Using  input  matrix:  " 
+       << conf_filename << endl;
+
+  return conf_filename;
+}
+
+void TaConfig::ParseRunNumber(){
+  if(run_number==0){
+
+    Ssiz_t pos_head = input_name.Last('_');
+    Ssiz_t pos_end = input_name.Last('.');
+    Ssiz_t length = pos_end-pos_head-1;
+    TString run_dot_seg = TString(input_name(pos_head+1,length));
+    cout << " -- Parsing Run Number from file name: " << run_dot_seg << endl;
+    Ssiz_t pos_dot = run_dot_seg.Last('.');
+    run_number = TString(run_dot_seg(0,pos_dot)).Atoi();
+    run_dot_seg.Remove(0,pos_dot+1);
+    seg_number = run_dot_seg.Atoi();
+  }
 }

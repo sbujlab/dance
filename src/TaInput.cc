@@ -13,22 +13,10 @@ using namespace std;
 
 TaInput::TaInput(TaConfig *aConfig){
   run_number= aConfig->GetRunNumber();
-  seg_number=0;
+  seg_number=aConfig->GetSegNumber();
   isExternalConstraint=kFALSE;
   InitChannels(aConfig);
   input_name = aConfig->GetInputName();
-  if(run_number==0){
-    Ssiz_t pos_head = input_name.Last('_');
-    Ssiz_t pos_end = input_name.Last('.');
-    Ssiz_t length = pos_end-pos_head-1;
-    TString run_dot_seg = TString(input_name(pos_head+1,length));
-    Ssiz_t pos_dot = run_dot_seg.Last('.');
-    run_number = TString(run_dot_seg(0,pos_dot)).Atoi();
-    run_dot_seg.Remove(0,pos_dot+1);
-    seg_number = run_dot_seg.Atoi();
-    aConfig->SetRunNumber(run_number);
-    aConfig->SetSegNumber(seg_number);
-  }
   input_path=aConfig->GetConfigParameter("input_path");
   input_prefix=aConfig->GetConfigParameter("input_prefix");
   TString cMinirun_size =(aConfig->GetConfigParameter("minirun_size"));
@@ -124,10 +112,13 @@ void TaInput::WriteRawChannels(TaOutput *aOutput){
       fChannelArray[i]->SetDefUsage(kFALSE);
     }
     else{
-      cout << "TBranch " <<fChannelNames[i] << " is not found in JAPAN mulc " << endl;
+      cout << " ** TBranch " <<fChannelNames[i] << " is not found in JAPAN mulc " << endl;
       if(fChannelArray[i]->HasUserDefinition()){
-	cout << fChannelNames[i] << " finds definition from user.    " << endl;
+	cout << " -- " << fChannelNames[i] << " finds definition from user.    " << endl;
 	fChannelArray[i]->SetDefUsage(kTRUE);
+      }else{
+	cout << " ** " <<fChannelNames[i] << " is invalid.    " << endl;
+	fChannelArray[i]->SetInvalid();
       }
     }
   }
@@ -135,6 +126,8 @@ void TaInput::WriteRawChannels(TaOutput *aOutput){
   ConnectChannels();
   TString leaflist = "hw_sum/D:block0:block1:block2:block3";
   for(int ich=0;ich<nch;ich++){
+    if(!(fChannelArray[ich]->isValidChannel()))
+      continue;
     if(!kMiniOnly)
       fChannelArray[ich]->ConstructTreeBranch(aOutput,leaflist);
     fChannelArray[ich]->ConstructMiniTreeBranch(aOutput,"mini");

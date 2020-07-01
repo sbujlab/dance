@@ -61,9 +61,9 @@ int main(int argc, char** argv){
   }
   
   TaConfig *fConfig= new TaConfig();
+  fConfig->SetRunNumber(run_number);
   fConfig->SetInputName(japanFileName);
   fConfig->ParseFile(confFileName);
-  fConfig->SetRunNumber(run_number);
   TaInput *fInput = new TaInput(fConfig);
   TaOutput *fOutput = new TaOutput(fConfig); 
   fInput->LoadROOTFile();
@@ -71,8 +71,9 @@ int main(int argc, char** argv){
   
   vector<VAnalysisModule*> fAnalyses = fConfig->GetAnalysisArray();
   vector<VAnalysisModule*>::iterator iter_ana = fAnalyses.begin();
+  Int_t kMod=0;
   while(iter_ana!=fAnalyses.end()){
-    cout << "Loading Module " << endl;
+    cout << "Loading Module " <<  kMod++ << endl;
     (*iter_ana)->LoadInput(fInput);
     (*iter_ana)->Process(fOutput);
     (*iter_ana)->End();

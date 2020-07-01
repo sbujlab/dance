@@ -64,8 +64,14 @@ public:
   inline Int_t GetSegNumber() const { return seg_number;};
   inline Int_t GetRunNumber() const { return run_number;};
   inline TString GetInputName() const { return input_name;};
-  inline void SetInputName(TString str){input_name=str;};
-  inline void SetRunNumber(Int_t i){run_number=i;};
+  void SetInputName(TString str){
+    input_name=str;
+    ParseRunNumber();
+  };
+  void SetRunNumber(Int_t i){
+    if(i!=0)
+      run_number=i;
+  };
   inline void SetSegNumber(Int_t i){seg_number=i;};
 
   vector<VAnalysisModule*> GetAnalysisArray();
@@ -73,16 +79,19 @@ public:
   Bool_t isKeyWord(TString input );
   void UpdateDeviceList( vector<TaDefinition*>  &alist,
 			TaDefinition* aDef);
-
+  
   Bool_t CheckRunRange(TString input);
   TString FindExtRootfile(TString format);
+  TString FindConfigByRange(TString format);
+  void ParseRunNumber();
 private:
 
   TString configName;
   Int_t run_number;
   Int_t seg_number;
   TString input_name;
-
+  Int_t kUpperBound;
+  Int_t kLowerBound;
   map< TString, TString> fConfigParameters;
   vector< map< TString, TString> > fAnalysisParameters;
 
