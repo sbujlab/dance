@@ -70,8 +70,14 @@ public:
   Bool_t HasUserDefinition(){
     return myDefinition->HasUserDefinition();
   };
-  
+  void SetInvalid(){
+    isValid = kFALSE;
+  }
+  Bool_t isValidChannel(){
+    return isValid;
+  }
 private:
+  Bool_t isValid;
   TString fTreeName;
   TaDefinition* myDefinition;
   Bool_t kUseDefinition;

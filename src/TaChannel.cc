@@ -3,6 +3,7 @@ ClassImp(TaChannel);
 
 TaChannel::TaChannel(){
   kUseDefinition = kFALSE;
+  isValid= kTRUE;
   fOutputValue.hw_sum=0.0;
 }
 
@@ -12,6 +13,7 @@ TaChannel::TaChannel(TString tree, TaDefinition* adef) {
   myDefinition = adef;
   kUseDefinition = kFALSE;
   fOutputValue.hw_sum=0.0;
+  isValid= kTRUE;
 }
 
 TaChannel::TaChannel(TString tree, TString channel){
@@ -19,6 +21,7 @@ TaChannel::TaChannel(TString tree, TString channel){
   fChannelName = channel;
   kUseDefinition = kFALSE;
   fOutputValue.hw_sum=0.0;
+  isValid= kTRUE;
 }
 
 TaChannel::~TaChannel(){}
