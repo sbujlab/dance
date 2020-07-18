@@ -15,6 +15,7 @@
 #pragma link C++ class VAnalysisModule+;
 #pragma link C++ class TaRegression+;
 #pragma link C++ class TaEigenRegression+;
+#pragma link C++ class TaEigenLagrangian+;
 #pragma link C++ class TaDataElement+;
 #pragma link C++ class TaDitAna+;
 #pragma link C++ class TaPrinter+;

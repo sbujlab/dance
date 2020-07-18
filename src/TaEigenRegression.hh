@@ -19,7 +19,7 @@ public:
   TaEigenRegression(Int_t ana_index, TaConfig *aConfig);
   virtual ~TaEigenRegression(){};
   void Process(TaOutput* fOutput);
-  vector<vector<Double_t> > Solve(TMatrixD, TMatrixD);
+  virtual vector<vector<Double_t> > Solve(TMatrixD, TMatrixD);
   void CorrectTree();
   void WriteSummary();
   virtual  TMatrixD GetDetMonCovMatrix(Int_t imini);
@@ -28,9 +28,11 @@ public:
   
   vector<Double_t> GetColumnVector(TMatrixD, Int_t icol);
   vector<Double_t> GetRowVector(TMatrixD, Int_t irow);
-  
-private:
+  vector<vector<Double_t> > RotateSlope(vector<vector<Double_t> > , TMatrixD);
+protected:
   vector<TaChannel*> fEigenVar; // uncorrelated BPMs
+  vector<TaChannel*> fCorrection_Truncated; // Truncated correction;
+  vector<TaChannel*> fOutputChannels_Truncated; // Truncated correction;
   ClassDef(TaEigenRegression,0);
 };
 

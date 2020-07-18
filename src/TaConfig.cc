@@ -1,6 +1,7 @@
 #include "TaConfig.hh"
 #include "TaRegression.hh"
 #include "TaEigenRegression.hh"
+#include "TaEigenLagrangian.hh"
 #include "TaLagrangian.hh"
 #include "TaCorrection.hh"
 #include "VAnalysisModule.hh"
@@ -128,6 +129,11 @@ vector<VAnalysisModule*> TaConfig::GetAnalysisArray(){
     if(type=="eigen-regression"){
       cout << "type == eigen-regression " << endl;
       anAnalysis = new TaEigenRegression(i,this);
+      fAnalysisArray.push_back(anAnalysis);
+    }
+    if(type=="eigen-lagrangian"){
+      cout << "type == eigen-lagrange " << endl;
+      anAnalysis = new TaEigenLagrangian(i,this);
       fAnalysisArray.push_back(anAnalysis);
     }
 
