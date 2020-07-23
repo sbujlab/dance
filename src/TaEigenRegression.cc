@@ -181,8 +181,10 @@ void TaEigenRegression::Process(TaOutput *fOutput){
 
       AccumulateMiniSum();
       AccumulateRunSum();
-      if(!kOutputMiniOnly)
+      if(!kOutputMiniOnly){
 	fOutput->FillTree(tree_name);
+	fOutput->FillTree(tree_name+"_tr");
+      }
     } // end of  event loop
     UpdateMiniStat();
     for(int ich=0;ich<nIV;ich++)
