@@ -84,6 +84,15 @@ public:
   TString FindExtRootfile(TString format);
   TString FindConfigByRange(TString format);
   void ParseRunNumber();
+  TaDefinition* GetDefinitionByName(TString name){
+    Int_t device_index;
+    if( device_map.find(name) == device_map.end())
+      device_index = -1;
+    else
+      device_index = device_map[name];
+
+    return device_list[device_index];
+  }
 private:
 
   TString configName;

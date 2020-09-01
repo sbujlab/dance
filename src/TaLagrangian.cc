@@ -86,14 +86,39 @@ void TaLagrangian::LoadConstraint(Int_t ana_index, TaConfig *aConfig){
     }
 
     for(int imon=0;imon<nMon;imon++){
+      cout << " ++ Load Constraint for " << sIVlist[imon] << endl;
       auto iter_mon = find((*ext_dv_array).begin(),(*ext_dv_array).end(),
 			   GetBaseName(sIVlist[imon]));
-      if(iter_mon==(*ext_dv_array).end())
+      if(iter_mon==(*ext_dv_array).end()){
 	cerr<< sIVlist[imon] << " not found in matrix files." << endl;
-      Int_t index_mon = iter_mon-(*ext_dv_array).begin();
-      monConstraints(icoil,imon)=(*sens_matrix)[index_mon][index_coil];
-    }
+	TaDefinition* mydef = aConfig->GetDefinitionByName(sIVlist[imon]);
+	if(mydef->HasUserDefinition() ){
+	  cout << " -- " << sIVlist[imon] << " has user def." << endl;
+	  cout << " --  Remix sensitivity from combining elements" << endl;
+	  vector<TString> fRawElementList = mydef->GetRawChannelList();
+	  vector<Double_t> fWeights = mydef->GetFactorArray();
+	  monConstraints(icoil,imon) = 0.0;
+	  Int_t nElement = fRawElementList.size();
+	  for(int iele=0;iele<nElement;iele++){
+	    TString my_basename = GetBaseName( fRawElementList[iele]);
+	    auto iter_raw = find((*ext_dv_array).begin(),(*ext_dv_array).end(),
+				 my_basename);
+	    if( iter_raw==(*ext_dv_array).end()){
+	      cerr << " ** " << my_basename 
+		   << " is not found in sens matrix. " << endl;
+	    }
+	    Int_t index_raw = iter_raw - (*ext_dv_array).begin();
+	    monConstraints(icoil,imon) += fWeights[iele]*(*sens_matrix)[index_raw][index_coil];
+	  }// end of raw element loop
+	} //end of if use def
+      } else{
+      	cout << "++ directly from sens matrix " << endl;
+      	Int_t index_mon = iter_mon-(*ext_dv_array).begin();
+      	monConstraints(icoil,imon)=(*sens_matrix)[index_mon][index_coil];
+      }
+    } // end of IV loop
   }
+  monConstraints.Print();
 #ifdef NOISY 
   monConstraints.Print();
   detConstraints.Print();
