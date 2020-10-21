@@ -30,10 +30,17 @@ void TaChannel::RegisterBranchAddress(TBranch* aBranch){
   TLeaf* hw_sum = aBranch->GetLeaf("hw_sum");
   if(hw_sum!=NULL){
     hw_sum->SetAddress(&(fOutputValue.hw_sum));
-    aBranch->GetLeaf("block0")->SetAddress(&(fOutputValue.block0));
-    aBranch->GetLeaf("block1")->SetAddress(&(fOutputValue.block1));
-    aBranch->GetLeaf("block2")->SetAddress(&(fOutputValue.block2));
-    aBranch->GetLeaf("block3")->SetAddress(&(fOutputValue.block3));
+    if(aBranch->GetLeaf("block0")==NULL){
+      fOutputValue.block0 = 0;
+      fOutputValue.block1 = 0;
+      fOutputValue.block2 = 0;
+      fOutputValue.block3 = 0;
+    }else{
+      aBranch->GetLeaf("block0")->SetAddress(&(fOutputValue.block0));
+      aBranch->GetLeaf("block1")->SetAddress(&(fOutputValue.block1));
+      aBranch->GetLeaf("block2")->SetAddress(&(fOutputValue.block2));
+      aBranch->GetLeaf("block3")->SetAddress(&(fOutputValue.block3));
+    }
   }else
     aBranch->SetAddress(&(fOutputValue.hw_sum));
   
