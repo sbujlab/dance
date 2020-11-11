@@ -7,13 +7,13 @@ def main():
     
     _email="tao@jlab.org"
     _mssdir="/mss/halla/parity/raw"
-    _source="/u/home/tao/work/respin2-sandbox/dance/"
+    _source="/u/group/halla/parity/software/japan_offline/lagrange/"
     _directory="/lustre/expphy/cache/halla/parity/raw"
-    _rootout="/u/home/tao/work/respin2-sandbox/dance/rootfiles/"
+    _rootout="./rootfiles/"
     _nrStart=2000
     _nrStop=6000
     submit=1
-    useSWIF=1 #0: uses jsub 1: uses SWIF+jsub
+    useSWIF=1#0: uses jsub 1: uses SWIF+jsub
 
     firstrun=9999
     lastrun=0
@@ -27,13 +27,13 @@ def main():
             lastrun=int(line)
     runfile.close()
                 
-    _workflowID="Lagrange_"+str(firstrun)+"_"+str(lastrun)
+    _workflowID="forced_"+str(firstrun)+"_"+str(lastrun)
 
     createXMLfile(_mssdir,_source,_rootout,_nrStart,_nrStop,_email,_workflowID,_runlist)
 
     if submit==1:
         if useSWIF==1:
-            print "Submitting lagrange prompt analysis for runs "+str(firstrun)+" to "+str(lastrun)+" using designated SWIF workflow "+str(_workflowID)
+            print "Submitting FORCED prompt analysis for runs "+str(firstrun)+" to "+str(lastrun)+" using designated SWIF workflow "+str(_workflowID)
             call(["swif","add-jsub","-workflow",str(_workflowID),"-create","-script",_source+"/"+_workflowID+".xml"])
         elif useSWIF==0:
             print "submitting position sampled with id between ",firstrun,lastrun
@@ -52,24 +52,18 @@ def createXMLfile(mssdir,source,rootout,nStart,nStop,email,workflowID,runlist):
     f.write("  <Project name=\"prex\"/>\n")
     f.write("  <Track name=\"one_pass\"/>\n")
     f.write("  <Name name=\""+workflowID+"\"/>\n")
-    f.write("  <OS name=\"centos7\"/>\n")
+    f.write("  <OS name=\"centos77\"/>\n")
     f.write("  <Memory space=\"2000\" unit=\"MB\"/>\n")
     for nr in runlist:
         if (nr < nStart or nr > nStop):
             continue
         f.write("  <Job>\n")
-        cmd = "ls /mss/halla/parity/raw/parity_ALL_"+str(nr)+".dat.* | sort -t'.' -n -k3 | tail -n 1 | awk -F. '{print $3}'"
-        ps = subprocess.Popen(cmd,shell=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
-        output = ps.communicate()[0]
-        # for partfile in range(0,int(output)+1):
-        #     datName="mss:"+mssdir+"/"+"parity_ALL"+"_%04d"%(nr)+".dat."+str(partfile)
-        # f.write("    <Input src=\""+datName+"\" dest=\"parity_ALL"+"_%04d"%(nr)+".dat."+str(partfile)+"\"/>\n")
         f.write("    <Command><![CDATA[\n")
         f.write("    cd "+source+"\n")
-        f.write("    "+source+"/lagrange.sh "+str(nr)+"; \n")
+        f.write("    "+source+"/forced_respin2.sh "+str(nr)+"; \n")
         f.write("    ]]></Command>\n")
-        f.write("    <Stdout dest=\""+source+"/LogFiles/lagrange_ifarmlog"+"_%04d"%(nr)+".out\"/>\n")
-        f.write("    <Stderr dest=\""+source+"/LogFiles/lagrange_ifarmlog"+"_%04d"%(nr)+".err\"/>\n")
+        f.write("    <Stdout dest=\""+source+"/LogFiles/forced_respin2log"+"_%04d"%(nr)+".out\"/>\n")
+        f.write("    <Stderr dest=\""+source+"/LogFiles/forced_respin2log"+"_%04d"%(nr)+".err\"/>\n")
         f.write("  </Job>\n\n")
 
     f.write("</Request>\n")

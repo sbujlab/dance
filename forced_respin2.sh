@@ -23,21 +23,9 @@ do
     echo $(($run_num))
     echo $run_num
 
-    conf_tr="lagrange-respin2-trunc.conf" 
-    conf1="lagrange-respin2-eigen.conf"
-    conf2="lagrange-respin2-forced.conf"
-    conf3="lagrange-respin2.conf"
+    conf="lagrange-respin2-forced.conf"
     ./dance \
     	-f $rootfile \
-    	-c ./conf/$conf_tr ; 
-    # ./dance \
-    # 	-f $rootfile \
-    # 	-c ./conf/$conf1 ; 
-    # ./dance \
-    # 	-f $rootfile \
-    # 	-c ./conf/$conf2 ; 
-    # ./dance \
-    # 	-f $rootfile \
-    # 	-c ./conf/$conf3 ; 
+    	-c ./conf/$conf ; 
 done
 

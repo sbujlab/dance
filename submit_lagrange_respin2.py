@@ -18,7 +18,7 @@ def main():
     firstrun=9999
     lastrun=0
     _runlist=[]
-    runfile=open(_source+"/prex-runlist/simple_list/slug1.list","r")
+    runfile=open(_source+"/prex-runlist/simple_list/Sep3.list","r")
     for line in runfile:
         _runlist.append(int(line))
         if (firstrun >= int(line) and _nrStart <= int(line)):
@@ -52,7 +52,7 @@ def createXMLfile(mssdir,source,rootout,nStart,nStop,email,workflowID,runlist):
     f.write("  <Project name=\"prex\"/>\n")
     f.write("  <Track name=\"one_pass\"/>\n")
     f.write("  <Name name=\""+workflowID+"\"/>\n")
-    f.write("  <OS name=\"centos7\"/>\n")
+    f.write("  <OS name=\"centos77\"/>\n")
     f.write("  <Memory space=\"2000\" unit=\"MB\"/>\n")
     for nr in runlist:
         if (nr < nStart or nr > nStop):
