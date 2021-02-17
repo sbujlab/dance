@@ -20,14 +20,15 @@ int main(int argc, char** argv){
   TStopwatch tsw;
 
   tsw.Start();
+  cout << "\n*********************************************** " <<endl;
+  cout << "Dithering Analysis and Correction Engine "  << endl;
+  cout << " (DANCE) " << endl;
+  cout<< "\t author: Tao Ye " << endl;
+  cout<< "\t <tao.ye@stonybrook.edu>" << endl;
+  cout<< "\t last update: Oct 2019" << endl;
+  cout << "***********************************************\n " <<endl;
+
   if(argc==1){
-    cout << "\n*********************************************** " <<endl;
-    cout << "Dithering Analysis and Correction Engine "  << endl;
-    cout << " (DANCE) " << endl;
-    cout<< "\t author: Tao Ye " << endl;
-    cout<< "\t <tao.ye@stonybrook.edu>" << endl;
-    cout<< "\t last update: Oct 2019" << endl;
-    cout << "***********************************************\n " <<endl;
     return 0;
   }
 
