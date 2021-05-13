@@ -1,0 +1,17 @@
+<Request>
+  <Email email="cameronc@jlab.org" request="false" job="true"/>
+  <Project name="prex"/>
+  <Track name="one_pass"/>
+  <Name name="crex-eigen-reg_8558_8558"/>
+  <OS name="centos77"/>
+  <Memory space="2000" unit="MB"/>
+  <Job>
+    <Command><![CDATA[
+    cd /u/group/halla/parity/software/japan_offline/lagrange/crex-respin1-scripts
+    /u/group/halla/parity/software/japan_offline/lagrange/crex-respin1-scripts/crex-eigen-reg.sh 8558; 
+    ]]></Command>
+    <Stdout dest="/u/group/halla/parity/software/japan_offline/lagrange/crex-respin1-scripts/LogFiles/crex-eigen-reg_respin1log_8558.out"/>
+    <Stderr dest="/u/group/halla/parity/software/japan_offline/lagrange/crex-respin1-scripts/LogFiles/crex-eigen-reg_respin1log_8558.err"/>
+  </Job>
+
+</Request>
