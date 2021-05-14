@@ -30,7 +30,7 @@ def main():
             lastrun=int(line)
     runfile.close()
                 
-    _workflowID="crex-eigen-reg-parts_"+str(firstrun)+"_"+str(lastrun)
+    _workflowID="crex-eigen-reg-respin2_"+str(firstrun)+"_"+str(lastrun)
 
     createXMLfile(_mssdir,_source,_rootout,_nrStart,_nrStop,_email,_workflowID,_runlist)
 
